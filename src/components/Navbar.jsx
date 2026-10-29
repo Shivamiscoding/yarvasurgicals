@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { FileText, MessageSquare, Menu, X, MapPin } from 'lucide-react';
+import { Menu, X, MapPin, ArrowRight } from 'lucide-react';
 import { COMPANY } from '../data/products';
 
-export default function Navbar({ onOpenQuoteModal }) {
+export default function Navbar({ onOpenEnquiryModal }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -27,7 +27,7 @@ export default function Navbar({ onOpenQuoteModal }) {
         </a>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden md:flex items-center gap-7 text-sm font-semibold text-slate-700">
+        <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-700">
           <a
             href="#products"
             className="hover:text-[#157e93] transition-colors flex items-center gap-1.5"
@@ -50,35 +50,24 @@ export default function Navbar({ onOpenQuoteModal }) {
           </a>
         </nav>
 
-        {/* Functional Action Buttons */}
+        {/* Functional "Enquire Now" Action Button */}
         <div className="hidden sm:flex items-center gap-3">
           <button
-            onClick={onOpenQuoteModal}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-[#01325d] text-xs font-bold transition-colors border border-slate-200"
+            onClick={onOpenEnquiryModal}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#01325d] hover:bg-[#032f59] text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
           >
-            <FileText className="w-3.5 h-3.5 text-[#157e93]" />
-            <span>Request Quote</span>
+            <span>Enquire Now</span>
+            <ArrowRight className="w-3.5 h-3.5 text-teal-300" />
           </button>
-
-          <a
-            href={`https://wa.me/?text=${encodeURIComponent(`Hello ${COMPANY.name}, I would like to inquire about your surgical supplies.`)}`}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors shadow-xs"
-          >
-            <MessageSquare className="w-3.5 h-3.5" />
-            <span>WhatsApp</span>
-          </a>
         </div>
 
         {/* Mobile menu toggle */}
         <div className="flex sm:hidden items-center gap-2">
           <button
-            onClick={onOpenQuoteModal}
-            className="p-2 text-[#01325d] rounded-lg border border-slate-200"
-            title="Request Quote"
+            onClick={onOpenEnquiryModal}
+            className="px-3 py-1.5 bg-[#01325d] text-white text-xs font-bold rounded-lg"
           >
-            <FileText className="w-5 h-5 text-[#157e93]" />
+            Enquire
           </button>
 
           <button
@@ -116,26 +105,17 @@ export default function Navbar({ onOpenQuoteModal }) {
             Address (Pirangut, Pune)
           </a>
 
-          <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
+          <div className="pt-2 border-t border-slate-100">
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
-                onOpenQuoteModal();
+                onOpenEnquiryModal();
               }}
-              className="w-full py-2.5 rounded-xl bg-[#01325d] text-white text-xs font-bold flex items-center justify-center gap-2"
+              className="w-full py-3 rounded-xl bg-[#01325d] text-white text-xs font-bold flex items-center justify-center gap-2"
             >
-              <FileText className="w-4 h-4 text-teal-300" />
-              <span>Request Quote</span>
+              <span>Enquire Now</span>
+              <ArrowRight className="w-4 h-4 text-teal-300" />
             </button>
-            <a
-              href={`https://wa.me/?text=${encodeURIComponent(`Hello ${COMPANY.name}, I would like to inquire about your surgical supplies.`)}`}
-              target="_blank"
-              rel="noreferrer"
-              className="w-full py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-bold flex items-center justify-center gap-2"
-            >
-              <MessageSquare className="w-4 h-4" />
-              <span>WhatsApp Inquiry</span>
-            </a>
           </div>
         </div>
       )}

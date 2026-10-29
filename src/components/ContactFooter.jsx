@@ -1,16 +1,8 @@
 import React, { useState } from 'react';
-import { MapPin, ExternalLink, Copy, Check, MessageSquare, ArrowUp, FileText } from 'lucide-react';
+import { MapPin, ExternalLink, ArrowUp, ArrowRight } from 'lucide-react';
 import { COMPANY } from '../data/products';
 
-export default function ContactFooter({ onOpenQuoteModal }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopyAddress = () => {
-    navigator.clipboard.writeText(COMPANY.address);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
+export default function ContactFooter({ onOpenEnquiryModal }) {
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -23,7 +15,7 @@ export default function ContactFooter({ onOpenQuoteModal }) {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
           
-          {/* Brand Info & Quick Actions */}
+          {/* Brand Info & Quick Action */}
           <div className="space-y-5">
             <div className="flex items-center gap-3">
               <img
@@ -45,53 +37,41 @@ export default function ContactFooter({ onOpenQuoteModal }) {
               {COMPANY.business}
             </p>
 
-            {/* Quick Action Buttons */}
-            <div className="flex flex-wrap gap-2 pt-1">
+            {/* Enquire Now Action Button */}
+            <div className="pt-1">
               <button
-                onClick={onOpenQuoteModal}
-                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-colors flex items-center gap-1.5 border border-white/20"
+                onClick={onOpenEnquiryModal}
+                className="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-semibold transition-colors flex items-center gap-2 border border-white/20 cursor-pointer"
               >
-                <FileText className="w-3.5 h-3.5 text-teal-300" />
-                <span>Request Quotation</span>
+                <span>Enquire Now</span>
+                <ArrowRight className="w-4 h-4 text-teal-300" />
               </button>
-
-              <a
-                href={`https://wa.me/?text=${encodeURIComponent(`Hello ${COMPANY.name}, I would like to inquire about your surgical supplies.`)}`}
-                target="_blank"
-                rel="noreferrer"
-                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors flex items-center gap-1.5"
-              >
-                <MessageSquare className="w-3.5 h-3.5" />
-                <span>WhatsApp Inquiry</span>
-              </a>
             </div>
           </div>
 
-          {/* Address Box with Interactive Tools */}
+          {/* Address Box with Clickable Link */}
           <div className="p-6 rounded-3xl bg-white/5 border border-white/10 space-y-4">
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#157e93]">
               <MapPin className="w-4 h-4 text-[#157e93]" />
-              <span>Registered Company Address</span>
+              <span>Company Address</span>
             </div>
 
-            <p className="text-sm sm:text-base text-slate-100 leading-relaxed font-semibold">
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="text-sm sm:text-base text-slate-100 hover:text-teal-300 leading-relaxed font-semibold block transition-colors underline-offset-4 hover:underline"
+              title="Click to open in Google Maps"
+            >
               {COMPANY.address}
-            </p>
+            </a>
 
-            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/10">
-              <button
-                onClick={handleCopyAddress}
-                className="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-colors flex items-center gap-1.5"
-              >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-slate-300" />}
-                <span>{copied ? 'Address Copied' : 'Copy Address'}</span>
-              </button>
-
+            <div className="pt-2 border-t border-white/10">
               <a
                 href={mapsUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="px-3.5 py-1.5 rounded-xl bg-[#157e93] hover:bg-[#126b7c] text-white text-xs font-semibold transition-colors flex items-center gap-1.5"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#157e93] hover:text-white transition-colors"
               >
                 <span>Open in Google Maps</span>
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -112,7 +92,7 @@ export default function ContactFooter({ onOpenQuoteModal }) {
             
             <button
               onClick={scrollToTop}
-              className="flex items-center gap-1 text-slate-300 hover:text-white transition-colors ml-2"
+              className="flex items-center gap-1 text-slate-300 hover:text-white transition-colors ml-2 cursor-pointer"
               title="Back to top"
             >
               <span>Top</span>

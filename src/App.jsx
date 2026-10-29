@@ -5,34 +5,33 @@ import ProductSection from './components/ProductSection';
 import EmptyTrailer from './components/EmptyTrailer';
 import ContactFooter from './components/ContactFooter';
 import ProductModal from './components/ProductModal';
-import QuoteModal from './components/QuoteModal';
+import EnquiryModal from './components/EnquiryModal';
 
 export default function App() {
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
-  const [quoteProduct, setQuoteProduct] = useState(null);
+  const [isEnquiryModalOpen, setIsEnquiryModalOpen] = useState(false);
+  const [enquiryProduct, setEnquiryProduct] = useState(null);
 
-  const handleOpenQuoteModal = (product = null) => {
-    setQuoteProduct(product);
-    setIsQuoteModalOpen(true);
+  const handleOpenEnquiryModal = (product = null) => {
+    setEnquiryProduct(product);
+    setIsEnquiryModalOpen(true);
   };
 
   return (
     <div className="min-h-screen bg-white text-slate-800 antialiased selection:bg-[#157e93] selection:text-white">
-      {/* Navigation with functional quote & WhatsApp buttons */}
-      <Navbar onOpenQuoteModal={() => handleOpenQuoteModal(null)} />
+      {/* Navigation */}
+      <Navbar onOpenEnquiryModal={() => handleOpenEnquiryModal(null)} />
 
       <main>
-        {/* Landing Hero with Logo on the LEFT and functional options on the RIGHT */}
+        {/* Landing Hero: Logo moved slightly up with clickable address underneath, and clean Enquire Now option on right */}
         <LandingHero
-          onOpenQuoteModal={() => handleOpenQuoteModal(null)}
-          onSelectProduct={(p) => setSelectedProduct(p)}
+          onOpenEnquiryModal={() => handleOpenEnquiryModal(null)}
         />
 
-        {/* 1-Scroll Listed Products with functional quote, copy specs & image inspection */}
+        {/* 1-Scroll Listed Products */}
         <ProductSection
           onSelectProduct={(p) => setSelectedProduct(p)}
-          onOpenQuoteModalWithProduct={(p) => handleOpenQuoteModal(p)}
+          onOpenEnquiryModalWithProduct={(p) => handleOpenEnquiryModal(p)}
         />
 
         {/* Empty Trailer Section */}
@@ -40,7 +39,7 @@ export default function App() {
       </main>
 
       {/* Address & Company Footer */}
-      <ContactFooter onOpenQuoteModal={() => handleOpenQuoteModal(null)} />
+      <ContactFooter onOpenEnquiryModal={() => handleOpenEnquiryModal(null)} />
 
       {/* Product Image Inspection Modal */}
       {selectedProduct && (
@@ -50,11 +49,11 @@ export default function App() {
         />
       )}
 
-      {/* Interactive Quotation Modal */}
-      <QuoteModal
-        isOpen={isQuoteModalOpen}
-        onClose={() => setIsQuoteModalOpen(false)}
-        defaultProduct={quoteProduct}
+      {/* Enquiry Popup (Email, Phone Number, Name, Enquiry For) */}
+      <EnquiryModal
+        isOpen={isEnquiryModalOpen}
+        onClose={() => setIsEnquiryModalOpen(false)}
+        defaultProduct={enquiryProduct}
       />
     </div>
   );

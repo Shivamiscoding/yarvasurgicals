@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { PRODUCTS, COMPANY } from '../data/products';
-import { Maximize2, MessageSquare, FileText, Copy, Check, Search } from 'lucide-react';
+import { Maximize2, Copy, Check, Search, ArrowRight } from 'lucide-react';
 
-export default function ProductSection({ onSelectProduct, onOpenQuoteModalWithProduct }) {
+export default function ProductSection({ onSelectProduct, onOpenEnquiryModalWithProduct }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedId, setCopiedId] = useState(null);
 
@@ -99,32 +99,20 @@ export default function ProductSection({ onSelectProduct, onOpenQuoteModalWithPr
                   ))}
                 </div>
 
-                {/* Multi-action Functional Options */}
+                {/* Action Buttons: Enquire Now & View */}
                 <div className="pt-3 border-t border-slate-100 space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => onOpenQuoteModalWithProduct(product)}
-                      className="py-2.5 px-3 rounded-xl bg-[#01325d] hover:bg-[#032f59] text-white text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-2xs"
-                    >
-                      <FileText className="w-3.5 h-3.5 text-teal-300" />
-                      <span>Request Quote</span>
-                    </button>
-
-                    <a
-                      href={`https://wa.me/?text=${encodeURIComponent(`Hello ${COMPANY.name}, I would like a price quote for "${product.name}".`)}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-2xs"
-                    >
-                      <MessageSquare className="w-3.5 h-3.5" />
-                      <span>WhatsApp</span>
-                    </a>
-                  </div>
+                  <button
+                    onClick={() => onOpenEnquiryModalWithProduct(product)}
+                    className="w-full py-3 px-4 rounded-xl bg-[#01325d] hover:bg-[#032f59] text-white text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+                  >
+                    <span>Enquire Now</span>
+                    <ArrowRight className="w-3.5 h-3.5 text-teal-300" />
+                  </button>
 
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleCopySpecs(product)}
-                      className="flex-1 py-2 px-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 text-[11px] font-semibold transition-colors flex items-center justify-center gap-1.5"
+                      className="flex-1 py-2 px-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 text-[11px] font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       {copiedId === product.id ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
                       <span>{copiedId === product.id ? 'Specs Copied' : 'Copy Specs'}</span>
@@ -132,7 +120,7 @@ export default function ProductSection({ onSelectProduct, onOpenQuoteModalWithPr
 
                     <button
                       onClick={() => onSelectProduct(product)}
-                      className="py-2 px-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 text-[11px] font-semibold transition-colors flex items-center justify-center gap-1"
+                      className="py-2 px-3.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 text-[11px] font-semibold transition-colors flex items-center justify-center gap-1 cursor-pointer"
                       title="Inspect full image"
                     >
                       <Maximize2 className="w-3.5 h-3.5 text-slate-400" />
