@@ -1,167 +1,129 @@
 import React, { useState } from 'react';
-import { MapPin, Phone, Mail, Clock, Send, MessageCircle, CheckCircle2, ShieldCheck, Building } from 'lucide-react';
-import { COMPANY_INFO, PRODUCTS } from '../data/products';
+import { MapPin, Phone, Mail, Clock, MessageSquare, Send, CheckCircle2, ArrowUpRight } from 'lucide-react';
+import { COMPANY, PRODUCTS } from '../data/products';
 
 export default function ContactSection() {
-  const [formData, setFormData] = useState({
-    orgName: '',
-    contactName: '',
+  const [submitted, setSubmitted] = useState(false);
+  const [form, setForm] = useState({
+    name: '',
+    facility: '',
     phone: '',
-    email: '',
-    selectedProducts: [],
-    volume: 'Monthly Hospital Supply',
+    product: PRODUCTS[0].title,
     notes: '',
   });
-
-  const [submitted, setSubmitted] = useState(false);
-
-  const toggleProduct = (name) => {
-    setFormData((prev) => {
-      const exists = prev.selectedProducts.includes(name);
-      return {
-        ...prev,
-        selectedProducts: exists
-          ? prev.selectedProducts.filter((p) => p !== name)
-          : [...prev.selectedProducts, name],
-      };
-    });
-  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setSubmitted(true);
   };
 
-  const mapsQuery = encodeURIComponent(
-    'H No 1534 Lawale Phata, Balaji Nagar, Pirangut, Mulshi, Pune, Maharashtra 412115'
-  );
+  const handleWhatsAppSend = () => {
+    const text = `*Inquiry - Yarva Surgicals*%0A*Facility:* ${form.facility || 'Healthcare Facility'}%0A*Contact:* ${form.name || 'Purchasing Team'}%0A*Phone:* ${form.phone || 'N/A'}%0A*Product:* ${form.product}%0A*Notes:* ${form.notes || 'Wholesale rate request'}`;
+    window.open(`https://wa.me/${COMPANY.whatsapp}?text=${text}`, '_blank');
+  };
+
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(COMPANY.address)}`;
 
   return (
-    <section id="contact" className="py-16 sm:py-20 bg-white border-b border-slate-200 scroll-mt-20">
+    <section id="contact" className="py-20 sm:py-28 bg-[#f8fafc] border-b border-slate-200 scroll-mt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-teal-50 border border-teal-200 text-[#028090] text-xs font-bold uppercase tracking-wider">
-            <Building className="w-4 h-4 text-[#028090]" />
-            Hospital & Dealer Procurement
+        {/* Header */}
+        <div className="max-w-3xl mb-16 space-y-3">
+          <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#008b99]">
+            <span className="w-2 h-2 rounded-full bg-[#008b99]"></span>
+            Contact & Central Distribution Hub
           </div>
-          
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#0b2545] tracking-tight font-['Outfit']">
-            Request an Institutional Quotation or Sample
+          <h2 className="text-3xl sm:text-5xl font-extrabold text-[#0b2545] tracking-tight font-['Outfit']">
+            Supply Inquiries & Hospital Contracts
           </h2>
-
-          <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-            Connect directly with our central warehouse team in Pirangut, Pune. We provide tailored rate cards, GST invoices, and fast clinical dispatch.
+          <p className="text-sm text-slate-600">
+            Reach our central distribution office in Pirangut, Pune. We dispatch across Pune, Pimpri-Chinchwad, and Western Maharashtra.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
           
-          {/* Left Column: Direct Official Contact Details */}
+          {/* Left Column: Direct Company Information & Location */}
           <div className="lg:col-span-5 space-y-6">
             
-            <div className="bg-slate-50 p-6 sm:p-8 rounded-2xl border border-slate-200 space-y-6">
-              <h3 className="text-xl font-bold text-[#0b2545] font-['Outfit']">
-                Yarva Surgicals
-              </h3>
-              <p className="text-xs text-[#028090] font-semibold uppercase tracking-wider -mt-4">
-                Quality • Care • Better Tomorrow
-              </p>
+            <div className="p-8 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-6">
+              
+              <div>
+                <h3 className="text-xl font-extrabold text-[#0b2545] font-['Outfit']">
+                  {COMPANY.name}
+                </h3>
+                <p className="text-xs uppercase tracking-wider font-semibold text-[#008b99] mt-0.5">
+                  {COMPANY.tagline}
+                </p>
+              </div>
 
-              {/* Physical Address */}
-              <div className="flex items-start gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-teal-100/70 border border-teal-300/60 flex items-center justify-center shrink-0 text-[#028090]">
-                  <MapPin className="w-5 h-5 text-[#028090]" />
-                </div>
+              {/* Address */}
+              <div className="pt-4 border-t border-slate-100 flex items-start gap-3">
+                <MapPin className="w-5 h-5 text-[#008b99] shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                    Central Warehouse & Office:
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Central Warehouse & Registered Office:
                   </h4>
-                  <p className="text-xs text-slate-700 font-medium mt-1 leading-relaxed">
-                    {COMPANY_INFO.address}
+                  <p className="text-sm font-semibold text-slate-900 mt-1 leading-relaxed">
+                    {COMPANY.address}
                   </p>
                   <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${mapsQuery}`}
+                    href={mapsUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#028090] hover:underline mt-1.5"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-[#008b99] hover:underline mt-2"
                   >
-                    Open in Google Maps →
+                    <span>View Location on Google Maps</span>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
                   </a>
                 </div>
               </div>
 
-              {/* Phone & Direct Desk */}
-              <div className="flex items-start gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-teal-100/70 border border-teal-300/60 flex items-center justify-center shrink-0 text-[#028090]">
-                  <Phone className="w-5 h-5 text-[#028090]" />
-                </div>
+              {/* Phone & WhatsApp */}
+              <div className="pt-4 border-t border-slate-100 flex items-start gap-3">
+                <Phone className="w-5 h-5 text-[#008b99] shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                    Procurement Hotline:
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Procurement Desk:
                   </h4>
-                  <p className="text-xs text-slate-700 font-semibold mt-1">
-                    {COMPANY_INFO.phone}
-                  </p>
-                  <p className="text-[11px] text-slate-500">
-                    Direct line for hospital purchase managers & distributors
-                  </p>
-                </div>
-              </div>
-
-              {/* WhatsApp Quick Link */}
-              <div className="flex items-start gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-emerald-100/70 border border-emerald-300/60 flex items-center justify-center shrink-0 text-emerald-700">
-                  <MessageCircle className="w-5 h-5 text-emerald-600" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                    WhatsApp Desk:
-                  </h4>
-                  <p className="text-xs text-slate-700 font-medium mt-1">
-                    Instant catalog & pricing on WhatsApp
+                  <p className="text-sm font-semibold text-slate-900 mt-1">
+                    {COMPANY.phone}
                   </p>
                   <a
-                    href={`https://wa.me/${COMPANY_INFO.whatsapp}?text=Hi%20Yarva%20Surgicals,%20we%20need%20a%20rate%20quote%20for%20our%20hospital/clinic.`}
+                    href={`https://wa.me/${COMPANY.whatsapp}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-800 underline mt-1"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-800 mt-1"
                   >
-                    Start WhatsApp Chat Now →
+                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span>Chat on WhatsApp Directly</span>
                   </a>
                 </div>
               </div>
 
               {/* Email */}
-              <div className="flex items-start gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-teal-100/70 border border-teal-300/60 flex items-center justify-center shrink-0 text-[#028090]">
-                  <Mail className="w-5 h-5 text-[#028090]" />
-                </div>
+              <div className="pt-4 border-t border-slate-100 flex items-start gap-3">
+                <Mail className="w-5 h-5 text-[#008b99] shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
                     Official Email:
                   </h4>
-                  <p className="text-xs text-slate-700 font-medium mt-1">
-                    {COMPANY_INFO.email}
-                  </p>
-                  <p className="text-[11px] text-slate-500">
-                    Send tender documents, RFQs & rate inquiries
+                  <p className="text-sm font-semibold text-slate-900 mt-1">
+                    {COMPANY.email}
                   </p>
                 </div>
               </div>
 
-              {/* Operating Hours */}
-              <div className="flex items-start gap-3.5 pt-2 border-t border-slate-200">
-                <div className="w-10 h-10 rounded-xl bg-slate-200 flex items-center justify-center shrink-0 text-slate-700">
-                  <Clock className="w-5 h-5 text-slate-600" />
-                </div>
+              {/* Hours */}
+              <div className="pt-4 border-t border-slate-100 flex items-start gap-3">
+                <Clock className="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                    Dispatch Operations:
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Operational Hours:
                   </h4>
                   <p className="text-xs text-slate-700 mt-1">
-                    {COMPANY_INFO.businessHours}
+                    {COMPANY.hours}
                   </p>
                 </div>
               </div>
@@ -170,173 +132,143 @@ export default function ContactSection() {
 
           </div>
 
-          {/* Right Column: Institutional RFQ Form */}
+          {/* Right Column: Clean B2B Price & Sample Request Form */}
           <div className="lg:col-span-7">
-            <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-xl space-y-6">
+            <div className="p-8 sm:p-10 rounded-2xl bg-white border border-slate-200 shadow-md">
               
-              <div>
-                <h3 className="text-xl font-bold text-[#0b2545] font-['Outfit']">
-                  Submit Institutional Request For Quotation (RFQ)
-                </h3>
-                <p className="text-xs text-slate-500 mt-1">
-                  Fill in your clinic or hospital details to receive official batch rates and tax invoices.
-                </p>
-              </div>
+              <h3 className="text-xl font-bold text-[#0b2545] font-['Outfit'] mb-1">
+                Request Rate Card & Evaluation Samples
+              </h3>
+              <p className="text-xs text-slate-500 mb-6">
+                Receive batch pricing, GST invoices, and delivery schedules for your healthcare facility.
+              </p>
 
               {submitted ? (
-                <div className="p-8 rounded-xl bg-teal-50 border border-teal-200 text-center space-y-3">
-                  <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+                <div className="p-8 rounded-xl bg-teal-50 border border-teal-200 text-center space-y-4">
+                  <div className="w-12 h-12 bg-[#008b99] text-white rounded-full flex items-center justify-center mx-auto">
                     <CheckCircle2 className="w-7 h-7" />
                   </div>
                   <h4 className="text-lg font-bold text-[#0b2545] font-['Outfit']">
-                    Quotation Request Received!
+                    Inquiry Transmitted
                   </h4>
-                  <p className="text-xs text-slate-600 max-w-md mx-auto">
-                    Thank you. Our Pune dispatch team will review your quantities and reach out within 2 hours with our best institutional price quote.
+                  <p className="text-xs text-slate-600 max-w-sm mx-auto">
+                    Thank you. Our Pune warehouse representative will get back to you with the official rate card and sample availability.
                   </p>
-                  <button
-                    onClick={() => setSubmitted(false)}
-                    className="text-xs font-bold text-[#028090] underline pt-2"
-                  >
-                    Submit another inquiry
-                  </button>
+                  <div className="pt-2 flex justify-center gap-3">
+                    <button
+                      onClick={handleWhatsAppSend}
+                      className="px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors"
+                    >
+                      Connect on WhatsApp
+                    </button>
+                    <button
+                      onClick={() => setSubmitted(false)}
+                      className="px-4 py-2.5 rounded-lg border border-slate-300 text-slate-700 text-xs font-semibold"
+                    >
+                      Reset Form
+                    </button>
+                  </div>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4 text-xs">
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
-                        Hospital / Clinic / Pharmacy Name *
+                      <label className="block font-bold text-slate-700 mb-1">
+                        Hospital / Pharmacy / Clinic Name *
                       </label>
                       <input
                         type="text"
                         required
-                        placeholder="e.g. Balaji Multi-Speciality Hospital"
-                        value={formData.orgName}
-                        onChange={(e) => setFormData({ ...formData, orgName: e.target.value })}
-                        className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#028090] focus:ring-1 focus:ring-[#028090]"
+                        placeholder="e.g. Balaji Hospital"
+                        value={form.facility}
+                        onChange={(e) => setForm({ ...form, facility: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#008b99]"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
-                        Contact Person / Doctor Name *
+                      <label className="block font-bold text-slate-700 mb-1">
+                        Contact Person Name *
                       </label>
                       <input
                         type="text"
                         required
-                        placeholder="e.g. Dr. Rajesh Sharma"
-                        value={formData.contactName}
-                        onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
-                        className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#028090] focus:ring-1 focus:ring-[#028090]"
+                        placeholder="e.g. Dr. K. Sharma / Purchase In-Charge"
+                        value={form.name}
+                        onChange={(e) => setForm({ ...form, name: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#008b99]"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
-                        Phone / WhatsApp Number *
+                      <label className="block font-bold text-slate-700 mb-1">
+                        Contact Number / WhatsApp *
                       </label>
                       <input
                         type="tel"
                         required
                         placeholder="+91 98220 00000"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#028090] focus:ring-1 focus:ring-[#028090]"
+                        value={form.phone}
+                        onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#008b99]"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
-                        Official Email
+                      <label className="block font-bold text-slate-700 mb-1">
+                        Consumable of Interest
                       </label>
-                      <input
-                        type="email"
-                        placeholder="procurement@hospital.org"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#028090] focus:ring-1 focus:ring-[#028090]"
-                      />
+                      <select
+                        value={form.product}
+                        onChange={(e) => setForm({ ...form, product: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#008b99] bg-white"
+                      >
+                        {PRODUCTS.map((p) => (
+                          <option key={p.id} value={p.title}>
+                            {p.title}
+                          </option>
+                        ))}
+                        <option value="All Three Products (Mixed Bulk)">
+                          All Three Products (Mixed Bulk Order)
+                        </option>
+                      </select>
                     </div>
                   </div>
 
-                  {/* Products Selection */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-2">
-                      Required Consumables:
-                    </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                      {PRODUCTS.map((prod) => {
-                        const isChecked = formData.selectedProducts.includes(prod.name);
-                        return (
-                          <button
-                            key={prod.id}
-                            type="button"
-                            onClick={() => toggleProduct(prod.name)}
-                            className={`p-2.5 rounded-xl border text-left text-xs font-medium transition-all ${
-                              isChecked
-                                ? 'bg-teal-50 border-[#028090] text-[#0b2545] font-semibold'
-                                : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="truncate">{prod.name}</span>
-                              <span className={`w-3.5 h-3.5 rounded flex items-center justify-center text-[10px] ${isChecked ? 'bg-[#028090] text-white' : 'border border-slate-300'}`}>
-                                {isChecked && '✓'}
-                              </span>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Volume / Tier */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Expected Order Tier:
-                    </label>
-                    <select
-                      value={formData.volume}
-                      onChange={(e) => setFormData({ ...formData, volume: e.target.value })}
-                      className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#028090] bg-white"
-                    >
-                      <option value="Sample Pack / Evaluation">Sample Evaluation Pack</option>
-                      <option value="Clinic Routine Supply (10-50 packs)">Clinic Routine Supply (10-50 packs)</option>
-                      <option value="Monthly Hospital Supply (100-500 packs)">Monthly Hospital Supply (100-500 packs)</option>
-                      <option value="Bulk Master Carton / Wholesale (500+ packs)">Bulk Master Carton / Wholesale (500+ packs)</option>
-                    </select>
-                  </div>
-
-                  {/* Message */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Specific Requirements / Delivery Instructions
+                    <label className="block font-bold text-slate-700 mb-1">
+                      Estimated Quantity & Specifications
                     </label>
                     <textarea
                       rows={3}
-                      placeholder="Specify sizes, ply count, sterilization report needs, delivery schedule, etc..."
-                      value={formData.notes}
-                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                      className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#028090]"
+                      placeholder="Specify required carton count, delivery urgency, or sample requests..."
+                      value={form.notes}
+                      onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#008b99]"
                     ></textarea>
                   </div>
 
-                  <button
-                    type="submit"
-                    className="w-full py-3.5 px-6 rounded-xl bg-[#0b2545] hover:bg-[#07192f] text-white text-xs font-bold tracking-wide transition-all shadow-md flex items-center justify-center gap-2"
-                  >
-                    <Send className="w-4 h-4 text-teal-400" />
-                    <span>Submit Request For Quotation</span>
-                  </button>
+                  <div className="pt-2 flex flex-col sm:flex-row gap-3">
+                    <button
+                      type="submit"
+                      className="flex-1 py-3 px-6 rounded-lg bg-[#0b2545] hover:bg-[#06172e] text-white font-bold transition-all shadow-xs flex items-center justify-center gap-2"
+                    >
+                      <Send className="w-4 h-4 text-[#008b99]" />
+                      <span>Submit Official Inquiry</span>
+                    </button>
 
-                  <p className="text-[11px] text-slate-500 text-center flex items-center justify-center gap-1.5">
-                    <ShieldCheck className="w-3.5 h-3.5 text-[#028090]" />
-                    <span>Your procurement details are kept confidential. Direct GST invoice dispatched.</span>
-                  </p>
+                    <button
+                      type="button"
+                      onClick={handleWhatsAppSend}
+                      className="flex-1 py-3 px-6 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-all shadow-xs flex items-center justify-center gap-2"
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                      <span>Inquire via WhatsApp</span>
+                    </button>
+                  </div>
 
                 </form>
               )}
