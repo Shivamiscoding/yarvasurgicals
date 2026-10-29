@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-heading: 'Outfit', sans-serif;
+    --font-sans: 'Plus Jakarta Sans', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
+}
+
+/* Custom Surgical Theme Utilities */
+.bg-yarva-navy {
+  background-color: #0b2545;
+}
+
+.text-yarva-navy {
+  color: #0b2545;
+}
+
+.bg-yarva-navy-dark {
+  background-color: #07192f;
+}
+
+.bg-yarva-teal {
+  background-color: #028090;
+}
+
+.text-yarva-teal {
+  color: #028090;
+}
+
+.border-yarva-teal {
+  border-color: #028090;
+}
+
+.bg-yarva-teal-light {
+  background-color: #e0f2f1;
+}
+
+.text-yarva-teal-dark {
+  color: #004d40;
+}
+
+/* Subtle surgical grid pattern for clean industrial tech feel */
+.medical-grid-bg {
+  background-image: radial-gradient(rgba(2, 128, 144, 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Custom scrollbar for clean look */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
