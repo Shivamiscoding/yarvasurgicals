@@ -46,6 +46,7 @@ export default function App() {
         <ProductModal
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
+          onOpenEnquiryModal={(p) => handleOpenEnquiryModal(p)}
         />
       )}
 

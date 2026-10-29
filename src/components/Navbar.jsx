@@ -6,55 +6,74 @@ export default function Navbar({ onOpenEnquiryModal }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-50 bg-white border-b border-slate-200">
+      
+      {/* Top Institutional Line */}
+      <div className="bg-[#012e58] text-white text-[11px] font-mono py-1.5 px-6 lg:px-12 border-b border-slate-800">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span className="font-semibold text-teal-300">CENTRAL DISPATCH:</span>
+            <span className="text-slate-300 hidden sm:inline">PIRANGUT, MULSHI, PUNE - 412115</span>
+          </div>
+
+          <div className="flex items-center gap-4 text-slate-300">
+            <span>OFFICIAL SUPPLIER PLATFORM</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Navbar */}
+      <div className="max-w-7xl mx-auto px-6 lg:px-12 h-20 flex items-center justify-between gap-6">
         
-        {/* Brand Logo & Name */}
-        <a href="#" className="flex items-center gap-3 shrink-0">
-          <img
-            src="/images/yarva-logo.jpg"
-            alt="Yarva Surgicals"
-            className="w-11 h-11 object-contain rounded-xl border border-slate-200 shadow-2xs"
-          />
+        {/* Brand Crest & Corporate Title */}
+        <a href="#" className="flex items-center gap-3.5 shrink-0 group">
+          <div className="w-12 h-12 rounded-xl bg-white p-1 border border-slate-200 shadow-2xs flex items-center justify-center">
+            <img
+              src="/images/yarva-logo.jpg"
+              alt="Yarva Surgicals"
+              className="max-h-full max-w-full object-contain"
+            />
+          </div>
           <div className="flex flex-col">
-            <span className="text-xl font-extrabold tracking-tight text-[#01325d] font-['Outfit']">
+            <span className="text-xl font-black tracking-tight text-[#012e58] font-['Outfit'] group-hover:text-[#157e93] transition-colors">
               YARVA <span className="text-[#157e93]">SURGICALS</span>
             </span>
-            <span className="text-[10px] tracking-wider uppercase font-semibold text-slate-400 -mt-1 hidden sm:block">
+            <span className="text-[10px] font-mono tracking-wider uppercase font-semibold text-slate-400">
               {COMPANY.tagline}
             </span>
           </div>
         </a>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-700">
+        <nav className="hidden md:flex items-center gap-8 text-xs font-mono font-semibold tracking-wider uppercase text-slate-600">
           <a
             href="#products"
-            className="hover:text-[#157e93] transition-colors flex items-center gap-1.5"
+            className="hover:text-[#157e93] transition-colors py-1 flex items-center gap-1.5"
           >
-            <span>Products</span>
-            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-slate-100 text-[#157e93]">3</span>
+            <span>[01] Products</span>
+            <span className="px-1.5 py-0.2 rounded bg-slate-100 text-[#157e93] font-bold">3</span>
           </a>
           <a
             href="#trailer"
-            className="hover:text-[#157e93] transition-colors"
+            className="hover:text-[#157e93] transition-colors py-1"
           >
-            Trailer
+            [02] Trailer
           </a>
           <a
             href="#address"
-            className="hover:text-[#157e93] transition-colors flex items-center gap-1"
+            className="hover:text-[#157e93] transition-colors py-1 flex items-center gap-1"
           >
             <MapPin className="w-3.5 h-3.5 text-[#157e93]" />
-            <span>Address</span>
+            <span>[03] Address</span>
           </a>
         </nav>
 
-        {/* Functional "Enquire Now" Action Button */}
+        {/* Primary Action Button */}
         <div className="hidden sm:flex items-center gap-3">
           <button
             onClick={onOpenEnquiryModal}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#01325d] hover:bg-[#032f59] text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+            className="px-5 py-2.5 rounded-xl bg-[#012e58] hover:bg-[#08213b] text-white text-xs font-bold transition-all shadow-2xs hover:shadow-xs flex items-center gap-2 cursor-pointer"
           >
             <span>Enquire Now</span>
             <ArrowRight className="w-3.5 h-3.5 text-teal-300" />
@@ -65,7 +84,7 @@ export default function Navbar({ onOpenEnquiryModal }) {
         <div className="flex sm:hidden items-center gap-2">
           <button
             onClick={onOpenEnquiryModal}
-            className="px-3 py-1.5 bg-[#01325d] text-white text-xs font-bold rounded-lg"
+            className="px-3 py-1.5 bg-[#012e58] text-white text-xs font-bold rounded-lg"
           >
             Enquire
           </button>
@@ -88,21 +107,21 @@ export default function Navbar({ onOpenEnquiryModal }) {
             onClick={() => setMobileMenuOpen(false)}
             className="block py-2 text-sm font-semibold text-slate-700 hover:text-[#157e93]"
           >
-            Products (3 Listed)
+            [01] Products (3 Listed)
           </a>
           <a
             href="#trailer"
             onClick={() => setMobileMenuOpen(false)}
             className="block py-2 text-sm font-semibold text-slate-700 hover:text-[#157e93]"
           >
-            Trailer
+            [02] Company Trailer
           </a>
           <a
             href="#address"
             onClick={() => setMobileMenuOpen(false)}
             className="block py-2 text-sm font-semibold text-slate-700 hover:text-[#157e93]"
           >
-            Address (Pirangut, Pune)
+            [03] Address &amp; Location
           </a>
 
           <div className="pt-2 border-t border-slate-100">
@@ -111,7 +130,7 @@ export default function Navbar({ onOpenEnquiryModal }) {
                 setMobileMenuOpen(false);
                 onOpenEnquiryModal();
               }}
-              className="w-full py-3 rounded-xl bg-[#01325d] text-white text-xs font-bold flex items-center justify-center gap-2"
+              className="w-full py-3 rounded-xl bg-[#012e58] text-white text-xs font-bold flex items-center justify-center gap-2"
             >
               <span>Enquire Now</span>
               <ArrowRight className="w-4 h-4 text-teal-300" />
@@ -119,6 +138,7 @@ export default function Navbar({ onOpenEnquiryModal }) {
           </div>
         </div>
       )}
+
     </header>
   );
 }
