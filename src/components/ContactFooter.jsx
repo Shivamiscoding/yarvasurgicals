@@ -1,5 +1,6 @@
 import React from 'react';
 import { MapPin, ExternalLink, ArrowUp, ArrowRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { COMPANY } from '../data/products';
 
 export default function ContactFooter({ onOpenEnquiryModal }) {
@@ -10,95 +11,122 @@ export default function ContactFooter({ onOpenEnquiryModal }) {
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(COMPANY.address)}`;
 
   return (
-    <footer id="address" className="bg-[#012e58] text-white pt-16 pb-12 px-6 lg:px-12 border-t border-slate-800 scroll-mt-16">
-      <div className="max-w-7xl mx-auto space-y-12">
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
-          
-          {/* Brand Info & Action */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-3.5">
-              <div className="w-14 h-14 rounded-xl bg-white p-1.5 flex items-center justify-center">
+    <footer id="address" className="relative bg-[#01325d] text-white scroll-mt-20 overflow-hidden">
+
+      {/* Subtle texture */}
+      <div className="absolute inset-0 opacity-[0.03]">
+        <div className="w-full h-full" style={{
+          backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)',
+          backgroundSize: '32px 32px'
+        }} />
+      </div>
+
+      {/* Ambient glow */}
+      <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#157e93]/10 rounded-full blur-[120px] pointer-events-none" />
+
+      <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-10 pt-20 pb-10">
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-14 items-start">
+
+          {/* Brand Side */}
+          <motion.div
+            className="space-y-6"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7 }}
+          >
+            <div className="flex items-center gap-4">
+              <div className="relative">
                 <img
                   src="/images/yarva-logo.jpg"
                   alt="Yarva Surgicals"
-                  className="max-h-full max-w-full object-contain"
+                  className="w-14 h-14 object-contain rounded-2xl bg-white p-1 shadow-lg"
                 />
               </div>
               <div>
-                <h3 className="text-2xl font-black tracking-tight font-['Outfit'] text-white">
+                <h3 className="text-2xl font-bold tracking-tight font-['Outfit']">
                   YARVA <span className="text-[#157e93]">SURGICALS</span>
                 </h3>
-                <p className="text-[11px] font-mono text-teal-300 font-semibold tracking-wider uppercase">
+                <p className="text-[10px] text-[#157e93] font-semibold tracking-[0.15em] uppercase mt-0.5">
                   {COMPANY.tagline}
                 </p>
               </div>
             </div>
 
-            <p className="text-xs sm:text-sm text-slate-300 max-w-md leading-relaxed font-normal">
-              Direct supplier and distributor of hospital-grade wound dressings, absorbent cotton wool, and orthopedic compression bandages based in Pune, Maharashtra.
+            <p className="text-sm text-slate-300 max-w-md leading-relaxed">
+              Premium surgical instruments and medical consumables — ISO 9001:2015 and ISO 13485:2016 certified manufacturer based in Pune, Maharashtra.
             </p>
 
-            <div className="pt-1">
-              <button
-                onClick={onOpenEnquiryModal}
-                className="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-semibold transition-colors flex items-center gap-2 border border-white/20 cursor-pointer"
-              >
-                <span>Enquire Now</span>
-                <ArrowRight className="w-4 h-4 text-teal-300" />
-              </button>
-            </div>
-          </div>
+            <button
+              onClick={onOpenEnquiryModal}
+              className="group inline-flex items-center gap-2.5 px-6 py-3 rounded-xl bg-white/10 hover:bg-white/15 text-white text-sm font-semibold transition-all duration-300 border border-white/10 hover:border-white/20 cursor-pointer"
+            >
+              <span>Enquire Now</span>
+              <ArrowRight className="w-4 h-4 text-teal-300 group-hover:translate-x-0.5 transition-transform" />
+            </button>
+          </motion.div>
 
-          {/* Registered Address Card */}
-          <div className="p-6 rounded-2xl bg-white/5 border border-white/10 space-y-4">
-            <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-teal-300">
-              <MapPin className="w-4 h-4 text-teal-300" />
-              <span>Registered Facility &amp; Dispatch Address</span>
+          {/* Address Card */}
+          <motion.div
+            className="p-7 rounded-[24px] bg-white/[0.04] border border-white/[0.08] backdrop-blur-sm space-y-5"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, delay: 0.15 }}
+          >
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.15em] text-[#157e93]">
+              <MapPin className="w-4 h-4" />
+              <span>Company Address</span>
             </div>
 
             <a
               href={mapsUrl}
               target="_blank"
               rel="noreferrer"
-              className="text-sm sm:text-base text-slate-100 hover:text-teal-200 leading-relaxed font-semibold block transition-colors underline-offset-4 hover:underline"
-              title="Click to open location in Google Maps"
+              className="block text-base text-slate-100 hover:text-teal-300 leading-relaxed font-semibold transition-colors duration-200"
+              title="Open in Google Maps"
             >
               {COMPANY.address}
             </a>
 
-            <div className="pt-3 border-t border-white/10 flex items-center justify-between">
-              <span className="text-[11px] font-mono text-slate-400">Mulshi Taluka, Pune District</span>
-
+            <div className="pt-3 border-t border-white/[0.08]">
               <a
                 href={mapsUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-300 hover:text-white transition-colors"
+                className="inline-flex items-center gap-2 text-xs font-bold text-[#157e93] hover:text-white transition-colors"
               >
                 <span>Open in Google Maps</span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
             </div>
-          </div>
+          </motion.div>
 
         </div>
 
-        {/* Bottom Utility Bar */}
-        <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-slate-400">
+        {/* Bottom Bar */}
+        <div className="mt-16 pt-6 border-t border-white/[0.08] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
           <p>© {new Date().getFullYear()} {COMPANY.name}. All rights reserved.</p>
-          
+
           <div className="flex items-center gap-6">
-            <a href="#products" className="hover:text-white transition-colors">[01] Products</a>
-            <a href="#trailer" className="hover:text-white transition-colors">[02] Trailer</a>
-            <a href="#address" className="hover:text-white transition-colors">[03] Address</a>
-            
+            {[
+              { label: 'Products', href: '#products' },
+              { label: 'Showcase', href: '#trailer' },
+              { label: 'Contact', href: '#address' },
+            ].map(({ label, href }) => (
+              <a key={label} href={href} className="hover:text-white transition-colors duration-200">
+                {label}
+              </a>
+            ))}
+
             <button
               onClick={scrollToTop}
-              className="flex items-center gap-1 text-slate-300 hover:text-white transition-colors ml-3 cursor-pointer"
+              className="flex items-center gap-1.5 text-slate-300 hover:text-white transition-colors ml-2 cursor-pointer group"
               title="Back to top"
             >
-              <span>TOP ↑</span>
+              <span>Top</span>
+              <ArrowUp className="w-3.5 h-3.5 group-hover:-translate-y-0.5 transition-transform" />
             </button>
           </div>
         </div>

@@ -18,39 +18,38 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-slate-800 antialiased selection:bg-[#157e93] selection:text-white">
+    <div className="min-h-screen bg-white text-slate-800 antialiased">
       {/* Navigation */}
       <Navbar onOpenEnquiryModal={() => handleOpenEnquiryModal(null)} />
 
       <main>
-        {/* Landing Hero: Logo moved slightly up with clickable address underneath, and clean Enquire Now option on right */}
+        {/* Hero Section with floating objects animation */}
         <LandingHero
           onOpenEnquiryModal={() => handleOpenEnquiryModal(null)}
         />
 
-        {/* 1-Scroll Listed Products */}
+        {/* Product Catalog */}
         <ProductSection
           onSelectProduct={(p) => setSelectedProduct(p)}
           onOpenEnquiryModalWithProduct={(p) => handleOpenEnquiryModal(p)}
         />
 
-        {/* Empty Trailer Section */}
+        {/* Video Showcase */}
         <EmptyTrailer />
       </main>
 
-      {/* Address & Company Footer */}
+      {/* Footer */}
       <ContactFooter onOpenEnquiryModal={() => handleOpenEnquiryModal(null)} />
 
-      {/* Product Image Inspection Modal */}
+      {/* Product Image Modal */}
       {selectedProduct && (
         <ProductModal
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
-          onOpenEnquiryModal={(p) => handleOpenEnquiryModal(p)}
         />
       )}
 
-      {/* Enquiry Popup (Email, Phone Number, Name, Enquiry For) */}
+      {/* Enquiry Form Modal */}
       <EnquiryModal
         isOpen={isEnquiryModalOpen}
         onClose={() => setIsEnquiryModalOpen(false)}
