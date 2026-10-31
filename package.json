@@ -21,12 +21,15 @@
   },
   "homepage": "https://github.com/Shivamiscoding/yarvasurgicals#readme",
   "dependencies": {
+    "@react-three/drei": "^10.7.9",
+    "@react-three/fiber": "^9.8.2",
     "clsx": "^2.1.1",
     "framer-motion": "^14.9.0",
     "lucide-react": "^1.64.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "tailwind-merge": "^3.7.0"
+    "tailwind-merge": "^3.7.0",
+    "three": "^0.187.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
