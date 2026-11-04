@@ -29,10 +29,7 @@ export default function App() {
         />
 
         {/* Product Catalog */}
-        <ProductSection
-          onSelectProduct={(p) => setSelectedProduct(p)}
-          onOpenEnquiryModalWithProduct={(p) => handleOpenEnquiryModal(p)}
-        />
+        <ProductSection onOpenEnquiryModal={handleOpenEnquiryModal} />
 
         {/* Video Showcase */}
         <EmptyTrailer />

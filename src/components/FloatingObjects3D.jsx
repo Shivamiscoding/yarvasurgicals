@@ -13,35 +13,28 @@ const NAVY = '#01325d';
 const TEAL = '#157e93';
 const TEAL_LIGHT = '#1a9bb5';
 
-/* ─── Bandage Roll: Torus (donut) with fabric-like material ─── */
+/* ─── Bandage Roll: Cylindrical roll with fabric-like material ─── */
 function BandageRoll({ position = [0, 0, 0], scale = 1 }) {
   const meshRef = useRef();
 
   useFrame((state) => {
     if (meshRef.current) {
-      meshRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.3) * 0.1;
-      meshRef.current.rotation.z += 0.003;
+      meshRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.3) * 0.2 + 0.5;
+      meshRef.current.rotation.y += 0.003;
     }
   });
 
   return (
-    <Float speed={1.8} rotationIntensity={0.4} floatIntensity={1.2} floatingRange={[-0.15, 0.15]}>
+    <Float speed={1.6} rotationIntensity={0.3} floatIntensity={1} floatingRange={[-0.12, 0.12]}>
       <mesh ref={meshRef} position={position} scale={scale} castShadow>
-        <torusGeometry args={[0.45, 0.2, 24, 48]} />
+        <cylinderGeometry args={[0.26, 0.26, 0.35, 32]} />
         <meshStandardMaterial
-          color="#f5f0eb"
-          roughness={0.85}
+          color="#f6f2ec"
+          roughness={0.8}
           metalness={0.02}
           envMapIntensity={0.3}
         />
       </mesh>
-      {/* Bandage wrap lines — thin torus rings */}
-      {[0, 0.08, -0.08].map((offset, i) => (
-        <mesh key={i} position={[position[0], position[1] + offset, position[2]]} scale={scale}>
-          <torusGeometry args={[0.45, 0.008, 8, 48]} />
-          <meshStandardMaterial color={TEAL} opacity={0.15} transparent roughness={0.5} />
-        </mesh>
-      ))}
     </Float>
   );
 }
@@ -307,28 +300,22 @@ function Scene() {
       <directionalLight position={[-3, 4, -2]} intensity={0.4} color="#c8e8f0" />
       <pointLight position={[0, 3, 4]} intensity={0.3} color={TEAL_LIGHT} />
 
-      {/* 3D Objects — scattered across the right half */}
-      {/* Top-right area */}
-      <BandageRoll position={[2.5, 1.8, -1]} scale={0.9} />
-      <MedicalCross position={[1.2, 2.2, -0.5]} scale={0.7} />
+      {/* 3D Objects — positioned across the right-half canvas */}
+      {/* Top area */}
+      <BandageRoll position={[1.2, 1.8, -1]} scale={0.85} />
+      <MedicalCross position={[-0.2, 2.2, -0.5]} scale={0.65} />
 
-      {/* Mid-right */}
-      <CottonBall position={[3.2, 0.2, -0.8]} scale={0.8} />
-      <GlassSphere position={[1.8, 0.5, 0.5]} scale={1.2} />
+      {/* Mid */}
+      <CottonBall position={[2.0, 0.2, -0.8]} scale={0.75} />
+      <GlassSphere position={[0.8, 0.6, 0.3]} scale={1.1} />
 
       {/* Lower area */}
-      <PillCapsule position={[2.8, -1.3, -0.3]} scale={0.85} />
-      <GauzePad position={[1.5, -1.8, -1]} scale={0.75} />
+      <PillCapsule position={[1.8, -1.2, -0.3]} scale={0.8} />
+      <GauzePad position={[0.4, -1.6, -1]} scale={0.7} />
 
-      {/* Scattered accents */}
-      <SurgicalRing position={[3.5, 1, 0.3]} scale={0.9} />
-      <SurgicalRing position={[0.8, -0.8, -1.5]} scale={0.6} />
-      <GlassSphere position={[3.8, -0.5, -1.2]} scale={0.7} />
-      <ScalpelBlade position={[2, -0.3, -1.8]} scale={1} />
-
-      {/* Far background hints */}
-      <CottonBall position={[-0.5, 1.5, -3]} scale={0.4} />
-      <SurgicalRing position={[-0.8, -1, -2.5]} scale={0.4} />
+      {/* Accents */}
+      <GlassSphere position={[2.4, -0.4, -1.2]} scale={0.65} />
+      <ScalpelBlade position={[1.0, -0.2, -1.5]} scale={0.9} />
 
       {/* Soft contact shadows on a ground plane */}
       <ContactShadows
@@ -349,7 +336,11 @@ function Scene() {
 /* ─── Canvas Wrapper ─── */
 export default function FloatingObjects3D() {
   return (
-    <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+    <div
+      className="absolute top-0 right-0 h-full pointer-events-none"
+      style={{ width: '58%' }}
+      aria-hidden="true"
+    >
       <Canvas
         camera={{ position: [0, 0, 6], fov: 45, near: 0.1, far: 50 }}
         dpr={[1, 1.5]}

@@ -1,160 +1,497 @@
-import React, { useState } from 'react';
-import { PRODUCTS, COMPANY } from '../data/products';
-import { Maximize2, Copy, Check, Search, ArrowRight } from 'lucide-react';
-import { motion } from 'framer-motion';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { PRODUCTS } from '../data/products';
+import { X, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-export default function ProductSection({ onSelectProduct, onOpenEnquiryModalWithProduct }) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [copiedId, setCopiedId] = useState(null);
+/* ─── Sound — always on, no toggle ─── */
+class SoundManager {
+  constructor() {
+    this.ctx = null;
+    this.lastPlayTime = 0;
+  }
+  init() {
+    if (!this.ctx && typeof window !== 'undefined') {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) this.ctx = new AudioCtx();
+    }
+    if (this.ctx?.state === 'suspended') this.ctx.resume();
+  }
+  playTick() {
+    this.init();
+    if (!this.ctx) return;
+    const now = Date.now();
+    if (now - this.lastPlayTime < 65) return;
+    this.lastPlayTime = now;
+    try {
+      const t = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(640, t);
+      osc.frequency.exponentialRampToValueAtTime(140, t + 0.022);
+      gain.gain.setValueAtTime(0.1, t);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.026);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.026);
+    } catch (_) {}
+  }
+}
+const soundManager = new SoundManager();
 
-  const filteredProducts = PRODUCTS.filter(
-    (p) =>
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.subtitle.toLowerCase().includes(searchQuery.toLowerCase())
+/* ─── Product Detail Modal ─── */
+function ProductDetailModal({ product, onClose, onOpenEnquiry }) {
+  const [activeImage, setActiveImage] = useState(product.image);
+  const [activeVariant, setActiveVariant] = useState(
+    product.variantDetails ? product.variantDetails[0].name : null
   );
 
-  const handleCopySpecs = (product) => {
-    const text = `${product.name} (${product.subtitle})\n${product.specs.map(s => `• ${s.label}: ${s.value}`).join('\n')}\nCompany: ${COMPANY.name} (${COMPANY.address})`;
-    navigator.clipboard.writeText(text);
-    setCopiedId(product.id);
-    setTimeout(() => setCopiedId(null), 2000);
+  return (
+    <motion.div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+    >
+      <div className="absolute inset-0 bg-black/55 backdrop-blur-sm" />
+
+      <motion.div
+        className="relative z-10 bg-white rounded-[28px] overflow-hidden shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+        initial={{ scale: 0.9, y: 28, opacity: 0 }}
+        animate={{ scale: 1, y: 0, opacity: 1 }}
+        exit={{ scale: 0.9, y: 28, opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Image header */}
+        <div className="relative bg-gradient-to-br from-slate-50 to-slate-100 aspect-[16/9] flex items-center justify-center p-8">
+          <img
+            key={activeImage}
+            src={activeImage}
+            alt={product.name}
+            className="max-h-full max-w-full object-contain transition-all duration-300"
+          />
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/95 shadow-sm flex items-center justify-center text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+
+          {/* Variant pills switch on image */}
+          {product.variantDetails && (
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md px-1.5 py-1 rounded-full shadow-md border border-slate-200/80 flex items-center gap-1">
+              {product.variantDetails.map((v) => (
+                <button
+                  key={v.name}
+                  onClick={() => {
+                    setActiveImage(v.image);
+                    setActiveVariant(v.name);
+                  }}
+                  className={`text-xs font-bold px-3.5 py-1 rounded-full transition-all cursor-pointer ${
+                    activeVariant === v.name
+                      ? 'bg-[#01325d] text-white shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {v.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="p-7 sm:p-9 space-y-7">
+          {/* Name */}
+          <div>
+            <h3 className="text-2xl sm:text-3xl font-extrabold text-[#01325d] font-['Outfit'] leading-tight mb-1">
+              {product.name}
+            </h3>
+          </div>
+
+          {/* ─ Category ─ */}
+          <div className="space-y-2">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#157e93]">
+              Category
+            </p>
+            <span className="inline-flex items-center gap-2 text-sm font-semibold text-[#01325d] bg-[#edf6f8] px-4 py-2 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#157e93]" />
+              {product.category}
+            </span>
+          </div>
+
+          {/* ─ Variants (if any) ─ */}
+          {product.variants && (
+            <div className="space-y-2">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#157e93]">
+                Variants
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {product.variants.map((variant, i) =>
+                  product.variantDetails ? (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        const vd = product.variantDetails.find(
+                          (d) => d.name.toLowerCase() === variant.toLowerCase()
+                        );
+                        if (vd) {
+                          setActiveImage(vd.image);
+                          setActiveVariant(vd.name);
+                        }
+                      }}
+                      className={`inline-flex items-center gap-2 text-xs font-bold px-3.5 py-1.5 rounded-full border transition-all cursor-pointer ${
+                        activeVariant === variant
+                          ? 'bg-[#01325d] text-white border-[#01325d]'
+                          : 'bg-slate-50 text-[#01325d] border-[#01325d]/20 hover:border-[#01325d]/50'
+                      }`}
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          activeVariant === variant ? 'bg-teal-300' : 'bg-[#157e93]'
+                        }`}
+                      />
+                      {variant}
+                    </button>
+                  ) : (
+                    <span
+                      key={i}
+                      className="inline-flex items-center gap-2 text-xs font-bold px-3.5 py-1.5 rounded-full bg-slate-50 text-[#01325d] border border-[#01325d]/20"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#157e93]" />
+                      {variant}
+                    </span>
+                  )
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ─ Description ─ */}
+          <div className="space-y-2">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#157e93]">
+              Description
+            </p>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              {product.description}
+            </p>
+          </div>
+
+          {/* ─ Common Applications ─ */}
+          <div className="space-y-3">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#157e93]">
+              Common Applications
+            </p>
+            <ul className="grid sm:grid-cols-2 gap-2">
+              {product.applications.map((app, i) => (
+                <li key={i} className="flex items-start gap-2.5 text-sm text-slate-600">
+                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#157e93] shrink-0" />
+                  {app}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* ─ Sizes / Pack Sizes ─ */}
+          <div className="space-y-3">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#157e93]">
+              {product.sizesLabel}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {product.sizes.map((size, i) => (
+                <span
+                  key={i}
+                  className="text-xs font-bold text-[#01325d] border border-[#01325d]/20 bg-slate-50 px-3.5 py-1.5 rounded-full"
+                >
+                  {size}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* ─ Enquiry Action ─ */}
+          {onOpenEnquiry && (
+            <div className="pt-2 border-t border-slate-100">
+              <button
+                onClick={() => {
+                  onClose();
+                  onOpenEnquiry(product);
+                }}
+                className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-[#01325d] text-white text-xs font-semibold hover:bg-[#022442] transition-colors cursor-pointer flex items-center justify-center gap-2"
+              >
+                <span>Request Quotation for {product.name}</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+/* ─── Gallery ─── */
+export default function ProductSection({ onOpenEnquiryModal }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [modalProduct, setModalProduct] = useState(null);
+  const count = PRODUCTS.length;
+  const dragStartX = useRef(0);
+  const isDragging = useRef(false);
+
+  const triggerSound = useCallback(() => {
+    soundManager.init();
+    soundManager.playTick();
+  }, []);
+
+  const goTo = useCallback(
+    (newIndex) => {
+      const target = (newIndex + count) % count;
+      setActiveIndex(target);
+      triggerSound();
+    },
+    [count, triggerSound]
+  );
+
+  // Keyboard
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'ArrowLeft') goTo(activeIndex - 1);
+      if (e.key === 'ArrowRight') goTo(activeIndex + 1);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeIndex, goTo]);
+
+  // Drag / swipe
+  const handleDragStart = (e) => {
+    soundManager.init();
+    isDragging.current = true;
+    dragStartX.current = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+  };
+  const handleDragEnd = (e) => {
+    if (!isDragging.current) return;
+    isDragging.current = false;
+    const endX = e.type === 'touchend' ? e.changedTouches[0].clientX : e.clientX;
+    const diff = dragStartX.current - endX;
+    if (Math.abs(diff) > 40) goTo(diff > 0 ? activeIndex + 1 : activeIndex - 1);
+  };
+
+  // Wheel / trackpad
+  const lastWheelTime = useRef(0);
+  const handleWheel = (e) => {
+    soundManager.init();
+    const now = Date.now();
+    if (now - lastWheelTime.current < 300) return;
+    if (Math.abs(e.deltaX) > 25 || Math.abs(e.deltaY) > 40) {
+      lastWheelTime.current = now;
+      goTo(activeIndex + ((e.deltaX || e.deltaY) > 0 ? 1 : -1));
+    }
+  };
+
+  // Offset wrapping: always show cards in correct positions
+  const getOffset = (index) => {
+    let diff = index - activeIndex;
+    if (diff > count / 2) diff -= count;
+    if (diff < -count / 2) diff += count;
+    return diff;
   };
 
   return (
-    <section id="products" className="relative py-24 px-6 lg:px-10 bg-white scroll-mt-20 overflow-hidden">
-      {/* Subtle top accent line */}
+    <section
+      id="products"
+      onWheel={handleWheel}
+      className="relative pt-12 pb-10 bg-white scroll-mt-20 overflow-hidden select-none"
+    >
+      {/* Top accent */}
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+      {/* Ambient glow */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            'radial-gradient(ellipse 70% 50% at 50% 48%, rgba(21,126,147,0.04) 0%, transparent 80%)',
+        }}
+      />
 
-      <div className="max-w-7xl mx-auto">
-
-        {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
-          <motion.div
-            className="space-y-3"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-50px' }}
-            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.15em] text-[#157e93]">
-              <span className="w-8 h-px bg-[#157e93]" />
-              Product Catalog
-            </span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#01325d] font-['Outfit'] tracking-tight">
-              Our Products
-            </h2>
-            <p className="text-sm text-slate-500 font-medium max-w-md">
-              Premium surgical consumables, each meeting Indian Pharmacopoeia and ISO standards.
-            </p>
-          </motion.div>
-
-          {/* Search */}
-          <motion.div
-            className="relative w-full md:w-72"
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#157e93] focus:bg-white transition-all duration-200"
-            />
-          </motion.div>
+      {/* Header */}
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 mb-8">
+        <div className="space-y-1">
+          <span className="inline-flex items-center gap-2.5 text-[11px] font-bold uppercase tracking-[0.2em] text-[#157e93]">
+            <span className="w-6 h-px bg-[#157e93]" />
+            Product Range
+          </span>
+          <h2 className="font-['Outfit'] font-extrabold text-[#01325d] tracking-tight text-3xl sm:text-4xl">
+            Our Catalogue
+          </h2>
         </div>
+      </div>
 
-        {/* Product Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-          {filteredProducts.map((product, index) => (
+      {/* 3D Stage */}
+      <div
+        className="relative w-full h-[470px] sm:h-[500px] flex items-center justify-center cursor-grab active:cursor-grabbing"
+        style={{ perspective: 1200 }}
+        onMouseDown={handleDragStart}
+        onMouseUp={handleDragEnd}
+        onTouchStart={handleDragStart}
+        onTouchEnd={handleDragEnd}
+      >
+        {PRODUCTS.map((product, idx) => {
+          const offset = getOffset(idx);
+          const isCenter = offset === 0;
+          const absOffset = Math.abs(offset);
+
+          const x = offset * 320;
+          const z = isCenter ? 30 : -80;
+          const rotateY = offset * -16;
+          const scale = isCenter ? 1.05 : absOffset === 1 ? 0.88 : 0.74;
+          const opacity = isCenter ? 1 : absOffset === 1 ? 0.58 : absOffset === 2 ? 0.3 : 0;
+
+          return (
             <motion.div
               key={product.id}
-              id={`product-${product.id}`}
-              className="group bg-white rounded-[24px] border border-slate-200/80 overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:shadow-[0_20px_60px_rgba(1,50,93,0.08)] transition-all duration-500 flex flex-col scroll-mt-24"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-30px' }}
-              transition={{ duration: 0.6, delay: index * 0.12, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute w-[280px] sm:w-[305px] rounded-[26px] overflow-hidden bg-white flex flex-col"
+              animate={{
+                x,
+                z,
+                rotateY,
+                scale,
+                opacity,
+                y: isCenter ? [0, -6, 0] : 0,
+              }}
+              transition={{
+                x: { type: 'spring', stiffness: 300, damping: 32 },
+                z: { type: 'spring', stiffness: 300, damping: 32 },
+                rotateY: { type: 'spring', stiffness: 300, damping: 32 },
+                scale: { type: 'spring', stiffness: 300, damping: 32 },
+                opacity: { duration: 0.22 },
+                y: isCenter
+                  ? { repeat: Infinity, duration: 3.6, ease: 'easeInOut' }
+                  : { duration: 0.3 },
+              }}
+              style={{
+                transformStyle: 'preserve-3d',
+                boxShadow: isCenter
+                  ? '0 0 0 2.5px #01325d, 0 24px 64px rgba(1,50,93,0.20)'
+                  : '0 6px 22px rgba(1,50,93,0.07)',
+                zIndex: 10 - absOffset,
+                cursor: 'pointer',
+              }}
+              onClick={() => {
+                if (isCenter) setModalProduct(product);
+                else goTo(idx);
+              }}
             >
-
-              {/* Product Image */}
+              {/* Image area */}
               <div
-                onClick={() => onSelectProduct(product)}
-                className="relative aspect-square bg-gradient-to-br from-slate-50 to-slate-100/50 p-8 flex items-center justify-center cursor-pointer border-b border-slate-100 overflow-hidden"
+                className="relative flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100/80 border-b border-slate-100"
+                style={{ height: 220, padding: '1.5rem' }}
               >
                 <img
                   src={product.image}
                   alt={product.name}
-                  className="max-h-full max-w-full object-contain transition-transform duration-700 ease-out group-hover:scale-[1.06]"
+                  className="max-h-full max-w-full object-contain pointer-events-none"
+                  draggable={false}
                 />
-
-                <span className="absolute top-4 right-4 p-2.5 bg-white/90 backdrop-blur-sm rounded-xl shadow-sm text-slate-500 hover:text-[#157e93] transition-colors border border-slate-200/50" title="View full image">
-                  <Maximize2 className="w-4 h-4" />
-                </span>
+                {isCenter && (
+                  <span
+                    className="absolute bottom-3 right-3 text-[9px] font-bold uppercase tracking-wider"
+                    style={{
+                      color: '#157e93',
+                      background: 'rgba(255,255,255,0.95)',
+                      border: '1px solid rgba(21,126,147,0.2)',
+                      padding: '3px 9px',
+                      borderRadius: 999,
+                    }}
+                  >
+                    Tap to expand
+                  </span>
+                )}
               </div>
 
-              {/* Product Info */}
-              <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-                <div>
-                  <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#157e93]">
-                    {product.subtitle}
-                  </span>
-                  <h3 className="text-lg font-bold text-[#01325d] font-['Outfit'] mt-1 leading-tight">
+              {/* Card body — name + description */}
+              <div className="p-5 flex flex-col gap-2 flex-1">
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="font-['Outfit'] font-bold text-[#01325d] text-base leading-snug">
                     {product.name}
                   </h3>
+                  {product.variantBadge && (
+                    <span className="shrink-0 text-[9px] font-bold text-[#157e93] bg-[#edf6f8] px-2 py-0.5 rounded-full border border-[#157e93]/20">
+                      {product.variantBadge}
+                    </span>
+                  )}
                 </div>
-
-                {/* Specs */}
-                <div className="space-y-0 pt-3 border-t border-slate-100">
-                  {product.specs.map((item, idx) => (
-                    <div key={idx} className="flex justify-between py-2 border-b border-slate-50 last:border-0 text-xs">
-                      <span className="text-slate-400 font-medium">{item.label}</span>
-                      <span className="text-slate-800 font-semibold text-right max-w-[60%] leading-snug">
-                        {item.value}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Actions */}
-                <div className="pt-3 space-y-2.5">
-                  <button
-                    onClick={() => onOpenEnquiryModalWithProduct(product)}
-                    className="w-full py-3.5 px-4 rounded-xl bg-[#01325d] hover:bg-[#021e3a] text-white text-xs font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-sm hover:shadow-md cursor-pointer"
+                <p className="text-xs text-slate-500 leading-relaxed line-clamp-3">
+                  {product.description}
+                </p>
+                {isCenter && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-auto pt-3 flex items-center gap-1 text-[11px] font-bold text-[#157e93]"
                   >
-                    <span>Enquire Now</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-teal-300" />
-                  </button>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleCopySpecs(product)}
-                      className="flex-1 py-2.5 px-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 text-[11px] font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                    >
-                      {copiedId === product.id ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
-                      <span>{copiedId === product.id ? 'Copied!' : 'Copy Specs'}</span>
-                    </button>
-
-                    <button
-                      onClick={() => onSelectProduct(product)}
-                      className="py-2.5 px-4 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 text-[11px] font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                      title="View full image"
-                    >
-                      <Maximize2 className="w-3.5 h-3.5 text-slate-400" />
-                      <span>View</span>
-                    </button>
-                  </div>
-                </div>
+                    View details <ArrowRight className="w-3.5 h-3.5" />
+                  </motion.div>
+                )}
               </div>
-
             </motion.div>
-          ))}
+          );
+        })}
+      </div>
+
+      {/* Controls */}
+      <div className="flex flex-col items-center gap-2.5 mt-2">
+        <div className="flex items-center gap-5">
+          <button
+            onClick={() => goTo(activeIndex - 1)}
+            aria-label="Previous product"
+            className="w-9 h-9 rounded-full border border-slate-200 bg-white shadow-sm flex items-center justify-center text-slate-500 hover:text-[#01325d] hover:border-[#01325d]/40 hover:shadow-md transition-all active:scale-95 cursor-pointer"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+
+          <div className="flex gap-2 items-center">
+            {PRODUCTS.map((p, i) => (
+              <button
+                key={p.id}
+                onClick={() => goTo(i)}
+                aria-label={`Go to ${p.name}`}
+                style={{ transition: 'all 0.3s cubic-bezier(0.16,1,0.3,1)' }}
+                className={`rounded-full cursor-pointer ${
+                  i === activeIndex
+                    ? 'w-7 h-2 bg-[#01325d]'
+                    : 'w-2 h-2 bg-slate-200 hover:bg-slate-400'
+                }`}
+              />
+            ))}
+          </div>
+
+          <button
+            onClick={() => goTo(activeIndex + 1)}
+            aria-label="Next product"
+            className="w-9 h-9 rounded-full border border-slate-200 bg-white shadow-sm flex items-center justify-center text-slate-500 hover:text-[#01325d] hover:border-[#01325d]/40 hover:shadow-md transition-all active:scale-95 cursor-pointer"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
 
+        <p className="text-[10px] text-slate-400 font-medium tracking-widest uppercase">
+          {activeIndex + 1} of {count} &nbsp;·&nbsp; Drag or use arrows
+        </p>
       </div>
+
+      {/* Modal */}
+      <AnimatePresence>
+        {modalProduct && (
+          <ProductDetailModal
+            product={modalProduct}
+            onClose={() => setModalProduct(null)}
+            onOpenEnquiry={onOpenEnquiryModal}
+          />
+        )}
+      </AnimatePresence>
     </section>
   );
 }
