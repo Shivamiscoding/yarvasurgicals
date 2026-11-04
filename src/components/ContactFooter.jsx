@@ -58,6 +58,7 @@ export default function ContactFooter({ onOpenEnquiryModal }) {
             <ul className="space-y-1.5">
               {[
                 { label: 'Home', href: '#' },
+                { label: 'About Us', href: '#about' },
                 { label: 'Our Catalogue', href: '#products' },
                 { label: 'Company Video', href: '#trailer' },
                 { label: 'Contact', href: '#address' },

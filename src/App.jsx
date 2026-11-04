@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Navbar from './components/Navbar';
 import LandingHero from './components/LandingHero';
+import AboutUs from './components/AboutUs';
 import ProductSection from './components/ProductSection';
 import EmptyTrailer from './components/EmptyTrailer';
 import ContactFooter from './components/ContactFooter';
@@ -27,6 +28,9 @@ export default function App() {
         <LandingHero
           onOpenEnquiryModal={() => handleOpenEnquiryModal(null)}
         />
+
+        {/* About Us */}
+        <AboutUs />
 
         {/* Product Catalog */}
         <ProductSection onOpenEnquiryModal={handleOpenEnquiryModal} />

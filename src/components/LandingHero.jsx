@@ -7,9 +7,12 @@ const FloatingObjects3D = lazy(() => import('./FloatingObjects3D'));
 
 export default function LandingHero({ onOpenEnquiryModal }) {
   const [loaded, setLoaded] = useState(false);
+  const [show3D, setShow3D] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoaded(true), 80);
+    const desktopMotion = window.matchMedia('(min-width: 1024px) and (prefers-reduced-motion: no-preference)');
+    setShow3D(desktopMotion.matches);
     return () => clearTimeout(timer);
   }, []);
 
@@ -41,9 +44,11 @@ export default function LandingHero({ onOpenEnquiryModal }) {
       />
 
       {/* 3D objects — fills the right half */}
-      <Suspense fallback={null}>
-        <FloatingObjects3D />
-      </Suspense>
+      {show3D && (
+        <Suspense fallback={null}>
+          <FloatingObjects3D />
+        </Suspense>
+      )}
 
       {/* ── Main layout ── */}
       <div className="relative z-10 flex-1 flex flex-col justify-center">

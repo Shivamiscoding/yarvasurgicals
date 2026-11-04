@@ -6,10 +6,13 @@ export default function EmptyTrailer() {
   const videoRef = useRef(null);
   const [playing, setPlaying] = useState(false);
 
-  const handlePlay = () => {
+  const handlePlay = async () => {
     if (videoRef.current) {
-      videoRef.current.play();
-      setPlaying(true);
+      try {
+        await videoRef.current.play();
+      } catch {
+        setPlaying(false);
+      }
     }
   };
 
