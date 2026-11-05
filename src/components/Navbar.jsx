@@ -46,9 +46,8 @@ export default function Navbar({ onOpenEnquiryModal }) {
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-1">
             {[
-              { label: 'About Us', href: '#about' },
               { label: 'Products', href: '#products' },
-              { label: 'Showcase', href: '#trailer' },
+              { label: 'About Us', href: '#about' },
               { label: 'Contact', href: '#address' },
             ].map(({ label, href }) => (
               <a
@@ -78,9 +77,8 @@ export default function Navbar({ onOpenEnquiryModal }) {
       {mobileMenuOpen && (
         <div className="md:hidden bg-white/95 backdrop-blur-xl border-t border-slate-100 px-6 py-5 space-y-1 shadow-xl animate-fade-in-up">
           {[
-            { label: 'About Us', href: '#about' },
             { label: 'Products', href: '#products' },
-            { label: 'Showcase', href: '#trailer' },
+            { label: 'About Us', href: '#about' },
             { label: 'Contact', href: '#address' },
           ].map(({ label, href }) => (
             <a
