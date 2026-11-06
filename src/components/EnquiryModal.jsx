@@ -8,7 +8,7 @@ import { PRODUCTS } from '../data/products';
    Change this single line to update the destination WhatsApp number.
    Format: Country code + 10-digit number without '+' or spaces.
 ───────────────────────────────────────────────────────────────────────────── */
-const WHATSAPP_NUMBER = '918265096707';
+const WHATSAPP_NUMBER = '918796342904';
 
 function WhatsAppIcon({ className = 'w-5 h-5 fill-current' }) {
   return (
