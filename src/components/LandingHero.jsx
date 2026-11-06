@@ -11,8 +11,8 @@ export default function LandingHero({ onOpenEnquiryModal }) {
 
   useEffect(() => {
     const timer = setTimeout(() => setLoaded(true), 80);
-    const desktopMotion = window.matchMedia('(min-width: 1024px) and (prefers-reduced-motion: no-preference)');
-    setShow3D(desktopMotion.matches);
+    const noReducedMotion = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    setShow3D(noReducedMotion);
     return () => clearTimeout(timer);
   }, []);
 
