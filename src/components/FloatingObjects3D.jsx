@@ -1,4 +1,4 @@
-import React, { useRef, useMemo, Suspense } from 'react';
+import React, { useRef, useMemo, useState, useEffect, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Float, MeshTransmissionMaterial, Environment, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
@@ -285,7 +285,7 @@ function ScalpelBlade({ position = [0, 0, 0], scale = 1 }) {
 /* ═══════════════════════════════════════════
  *  MAIN 3D SCENE — exported for LandingHero
  * ═══════════════════════════════════════════ */
-function Scene() {
+function Scene({ isMobile }) {
   return (
     <>
       {/* Lighting */}
@@ -300,22 +300,45 @@ function Scene() {
       <directionalLight position={[-3, 4, -2]} intensity={0.4} color="#c8e8f0" />
       <pointLight position={[0, 3, 4]} intensity={0.3} color={TEAL_LIGHT} />
 
-      {/* 3D Objects — positioned across the right-half canvas */}
-      {/* Top area */}
-      <BandageRoll position={[1.2, 1.8, -1]} scale={0.85} />
-      <MedicalCross position={[-0.2, 2.2, -0.5]} scale={0.65} />
+      {/* 3D Objects */}
+      {isMobile ? (
+        /* Mobile layout — distributed across screen margins so text remains legible */
+        <>
+          {/* Top-right next to header */}
+          <MedicalCross position={[1.4, 2.4, -0.6]} scale={0.55} />
+          {/* Top-left */}
+          <CottonBall position={[-1.3, 2.0, -0.8]} scale={0.65} />
+          {/* Mid-right */}
+          <PillCapsule position={[1.4, 0.4, -0.4]} scale={0.65} />
+          {/* Mid-left */}
+          <BandageRoll position={[-1.4, -0.4, -0.6]} scale={0.65} />
+          {/* Lower-right */}
+          <GlassSphere position={[1.3, -1.5, 0.1]} scale={0.8} />
+          {/* Lower-left */}
+          <GauzePad position={[-1.2, -2.4, -0.8]} scale={0.55} />
+          {/* Accent background */}
+          <ScalpelBlade position={[0.6, -2.8, -1.2]} scale={0.7} />
+        </>
+      ) : (
+        /* Desktop layout — positioned across the right-half canvas */
+        <>
+          {/* Top area */}
+          <BandageRoll position={[1.2, 1.8, -1]} scale={0.85} />
+          <MedicalCross position={[-0.2, 2.2, -0.5]} scale={0.65} />
 
-      {/* Mid */}
-      <CottonBall position={[2.0, 0.2, -0.8]} scale={0.75} />
-      <GlassSphere position={[0.8, 0.6, 0.3]} scale={1.1} />
+          {/* Mid */}
+          <CottonBall position={[2.0, 0.2, -0.8]} scale={0.75} />
+          <GlassSphere position={[0.8, 0.6, 0.3]} scale={1.1} />
 
-      {/* Lower area */}
-      <PillCapsule position={[1.8, -1.2, -0.3]} scale={0.8} />
-      <GauzePad position={[0.4, -1.6, -1]} scale={0.7} />
+          {/* Lower area */}
+          <PillCapsule position={[1.8, -1.2, -0.3]} scale={0.8} />
+          <GauzePad position={[0.4, -1.6, -1]} scale={0.7} />
 
-      {/* Accents */}
-      <GlassSphere position={[2.4, -0.4, -1.2]} scale={0.65} />
-      <ScalpelBlade position={[1.0, -0.2, -1.5]} scale={0.9} />
+          {/* Accents */}
+          <GlassSphere position={[2.4, -0.4, -1.2]} scale={0.65} />
+          <ScalpelBlade position={[1.0, -0.2, -1.5]} scale={0.9} />
+        </>
+      )}
 
       {/* Soft contact shadows on a ground plane */}
       <ContactShadows
@@ -335,14 +358,23 @@ function Scene() {
 
 /* ─── Canvas Wrapper ─── */
 export default function FloatingObjects3D() {
+  const [isMobile, setIsMobile] = useState(() => 
+    typeof window !== 'undefined' ? window.innerWidth < 1024 : false
+  );
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <div
-      className="absolute top-0 right-0 h-full pointer-events-none"
-      style={{ width: '58%' }}
+      className="absolute inset-0 w-full h-full lg:left-auto lg:right-0 lg:w-[58%] pointer-events-none"
       aria-hidden="true"
     >
       <Canvas
-        camera={{ position: [0, 0, 6], fov: 45, near: 0.1, far: 50 }}
+        camera={{ position: [0, 0, isMobile ? 6.5 : 6], fov: isMobile ? 50 : 45, near: 0.1, far: 50 }}
         dpr={[1, 1.5]}
         gl={{
           antialias: true,
@@ -352,7 +384,7 @@ export default function FloatingObjects3D() {
         style={{ background: 'transparent' }}
       >
         <Suspense fallback={null}>
-          <Scene />
+          <Scene isMobile={isMobile} />
         </Suspense>
       </Canvas>
     </div>
