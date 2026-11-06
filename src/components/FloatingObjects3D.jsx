@@ -302,22 +302,28 @@ function Scene({ isMobile }) {
 
       {/* 3D Objects */}
       {isMobile ? (
-        /* Mobile layout — distributed across screen margins so text remains legible */
+        /* Mobile layout — balanced framing keeping all objects visible within the phone viewport */
         <>
-          {/* Top-right next to header */}
-          <MedicalCross position={[1.4, 2.4, -0.6]} scale={0.55} />
-          {/* Top-left */}
-          <CottonBall position={[-1.3, 2.0, -0.8]} scale={0.65} />
-          {/* Mid-right */}
-          <PillCapsule position={[1.4, 0.4, -0.4]} scale={0.65} />
-          {/* Mid-left */}
-          <BandageRoll position={[-1.4, -0.4, -0.6]} scale={0.65} />
-          {/* Lower-right */}
-          <GlassSphere position={[1.3, -1.5, 0.1]} scale={0.8} />
-          {/* Lower-left */}
-          <GauzePad position={[-1.2, -2.4, -0.8]} scale={0.55} />
-          {/* Accent background */}
-          <ScalpelBlade position={[0.6, -2.8, -1.2]} scale={0.7} />
+          {/* Top-right next to logo (exact position loved by user) */}
+          <MedicalCross position={[1.35, 2.35, -0.6]} scale={0.55} />
+
+          {/* Top-left: soft cotton ball mirroring the cross on the left */}
+          <CottonBall position={[-0.85, 2.15, -0.6]} scale={0.6} />
+
+          {/* Mid-left: pill capsule floating near left curve of AY logo */}
+          <PillCapsule position={[-0.85, 0.75, -0.3]} scale={0.62} />
+
+          {/* Mid-right: bandage roll floating near right edge of AY logo */}
+          <BandageRoll position={[0.85, 0.55, -0.4]} scale={0.6} />
+
+          {/* Lower-right: glowing translucent teal glass orb between logo and address */}
+          <GlassSphere position={[0.78, -0.35, 0.1]} scale={0.7} />
+
+          {/* Lower-left: sterile gauze pad floating beside address / eyebrow */}
+          <GauzePad position={[-0.8, -1.05, -0.5]} scale={0.55} />
+
+          {/* Lower-right: precision scalpel blade floating beside headline */}
+          <ScalpelBlade position={[0.75, -1.75, -0.7]} scale={0.75} />
         </>
       ) : (
         /* Desktop layout — positioned across the right-half canvas */
