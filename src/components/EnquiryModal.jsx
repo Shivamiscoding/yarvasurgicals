@@ -1,20 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Check, AlertCircle } from 'lucide-react';
+import { X, Check, AlertCircle, ArrowUpRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PRODUCTS } from '../data/products';
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   🔧 WEB3FORMS ACCESS KEY
-   Submissions are sent directly to shivammaurya2208200@gmail.com
+   🔧 WHATSAPP RECIPIENT NUMBER
+   Change this single line to update the destination WhatsApp number.
+   Format: Country code + 10-digit number without '+' or spaces.
 ───────────────────────────────────────────────────────────────────────────── */
-const WEB3FORMS_ACCESS_KEY = '12b8a0ae-8fd1-447e-a3e5-225d33526b50';
+const WHATSAPP_NUMBER = '918265096707';
+
+function WhatsAppIcon({ className = 'w-5 h-5 fill-current' }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+    </svg>
+  );
+}
 
 /* ── Validation ─────────────────────────────────────────────────────────── */
-const DISPOSABLE = [
-  'mailinator.com','guerrillamail.com','trashmail.com','tempmail.com',
-  'throwam.com','yopmail.com','fakeinbox.com','spamgourmet.com',
-  'maildrop.cc','dispostable.com','discard.email','filzmail.com',
-];
 const EMAIL_RE = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
 
 const validate = {
@@ -29,8 +33,7 @@ const validate = {
   },
   email: (v) => {
     if (!v || !v.trim()) return '';
-    if (!EMAIL_RE.test(v.trim())) return 'Invalid email';
-    if (DISPOSABLE.includes(v.trim().split('@')[1]?.toLowerCase())) return 'Use a real email';
+    if (!EMAIL_RE.test(v.trim())) return 'Invalid email address';
     return '';
   },
   products: (arr) => (arr.length === 0 ? 'Select at least one product' : ''),
@@ -48,17 +51,18 @@ export default function EnquiryModal({ isOpen, onClose, defaultProduct = null })
   const [form, setForm] = useState(blank);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
-  const [status, setStatus] = useState('idle'); // 'idle' | 'submitting' | 'success' | 'error'
-  const [errorMessage, setErrorMessage] = useState('');
+  const [status, setStatus] = useState('idle'); // 'idle' | 'opened'
+  const [generatedUrl, setGeneratedUrl] = useState('');
 
   useEffect(() => {
     if (!isOpen) return;
-    const pre = defaultProduct?.name ? [defaultProduct.name] : [];
-    setForm({ ...blank, products: pre });
+    // Default to clicked product OR the first catalogue product so a product is always selected
+    const initialProduct = defaultProduct?.name || PRODUCTS[0]?.name || 'Absorbent Cotton Roll';
+    setForm({ ...blank, products: [initialProduct] });
     setErrors({});
     setTouched({});
     setStatus('idle');
-    setErrorMessage('');
+    setGeneratedUrl('');
     const t = setTimeout(() => nameRef.current?.focus(), 160);
     return () => clearTimeout(t);
   }, [isOpen, defaultProduct]);
@@ -95,9 +99,10 @@ export default function EnquiryModal({ isOpen, onClose, defaultProduct = null })
     });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = (e) => {
+    if (e) e.preventDefault();
     setTouched({ name: true, phone: true, email: true, products: true });
+
     const errs = {
       name: validate.name(form.name),
       phone: validate.phone(form.phone),
@@ -107,47 +112,28 @@ export default function EnquiryModal({ isOpen, onClose, defaultProduct = null })
     setErrors(errs);
     if (Object.values(errs).some(Boolean)) return;
 
-    setStatus('submitting');
-    setErrorMessage('');
+    // Construct professional, pre-filled WhatsApp message
+    const lines = [
+      `*New Product Enquiry — Yarva Surgicals*`,
+      ``,
+      `*Customer:* ${form.name.trim()}`,
+      `*Phone:* ${form.phone.trim()}`,
+      form.email && form.email.trim() ? `*Email:* ${form.email.trim()}` : null,
+      ``,
+      `*Products Requested:*`,
+      ...form.products.map((p) => `• ${p}`),
+      ``,
+      form.message && form.message.trim() ? `*Requirements:* ${form.message.trim()}` : `*Requirements:* General quotation inquiry`,
+    ].filter(Boolean);
 
-    try {
-      const payload = {
-        access_key: WEB3FORMS_ACCESS_KEY,
-        subject: `New Product Enquiry from ${form.name.trim()} — Yarva Surgicals`,
-        from_name: 'Yarva Surgicals Website',
-        name: form.name.trim(),
-        phone: form.phone.trim(),
-        products_requested: form.products.join(', '),
-        requirements: form.message.trim() || 'General quotation inquiry',
-      };
+    const text = lines.join('\n');
+    const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
 
-      // Only include email if user actually entered one to avoid triggering Web3Forms invalid email validator
-      if (form.email && form.email.trim()) {
-        payload.email = form.email.trim();
-      }
+    setGeneratedUrl(waUrl);
+    setStatus('opened');
 
-      const res = await fetch('https://api.web3forms.com/submit', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json().catch(() => ({}));
-
-      if (res.ok && (data.success === true || data.success === 'true')) {
-        setStatus('success');
-      } else {
-        setErrorMessage(data.message || 'Submission could not be completed. Please try again.');
-        setStatus('error');
-      }
-    } catch (err) {
-      console.error('Submission error:', err);
-      setErrorMessage('Network connection error. Please try again.');
-      setStatus('error');
-    }
+    // Open WhatsApp in a new tab / app
+    window.open(waUrl, '_blank', 'noopener,noreferrer');
   };
 
   if (!isOpen) return null;
@@ -186,7 +172,7 @@ export default function EnquiryModal({ isOpen, onClose, defaultProduct = null })
                 Request a Product Enquiry
               </h2>
               <p className="mt-3 text-xs text-white/50 leading-relaxed">
-                Fill in your details and select the products you need. We'll get back to you with availability and pricing.
+                Select your required supplies and connect directly with our procurement desk on WhatsApp for instant pricing.
               </p>
             </div>
 
@@ -213,31 +199,51 @@ export default function EnquiryModal({ isOpen, onClose, defaultProduct = null })
             </div>
 
             <div className="px-6 py-5">
-              {/* SUCCESS */}
-              {status === 'success' && (
-                <div className="py-10 flex flex-col items-center gap-4 text-center">
-                  <div className="w-14 h-14 rounded-full bg-[#157e93]/10 flex items-center justify-center">
-                    <Check className="w-7 h-7 text-[#157e93] stroke-[2.5]" />
+              {/* SUCCESS / WHATSAPP OPENED STATE */}
+              {status === 'opened' && (
+                <div className="py-8 flex flex-col items-center gap-4 text-center">
+                  <div className="w-16 h-16 rounded-full bg-[#25D366]/15 text-[#25D366] flex items-center justify-center">
+                    <WhatsAppIcon className="w-9 h-9" />
                   </div>
                   <div>
-                    <h4 className="font-['Outfit'] text-lg font-bold text-[#01325d]">Enquiry Sent!</h4>
-                    <p className="text-sm text-slate-500 mt-1 leading-relaxed max-w-xs mx-auto">
-                      Thanks, <strong className="text-slate-700">{form.name}</strong>. We've received your enquiry for{' '}
+                    <h4 className="font-['Outfit'] text-xl font-bold text-[#01325d]">
+                      Enquiry Prepared!
+                    </h4>
+                    <p className="text-sm text-slate-600 mt-1.5 leading-relaxed max-w-sm mx-auto">
+                      WhatsApp should have opened with your enquiry for{' '}
                       <strong className="text-[#01325d]">{form.products.join(', ')}</strong>.
-                      Our team will reach you at <strong className="text-slate-700">{form.phone}</strong>.
                     </p>
                   </div>
-                  <button
-                    onClick={onClose}
-                    className="mt-1 px-7 py-2.5 rounded-xl bg-[#01325d] text-white text-sm font-semibold hover:bg-[#022442] transition-colors cursor-pointer"
-                  >
-                    Done
-                  </button>
+
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 max-w-sm w-full space-y-1">
+                    <p className="font-semibold text-slate-700">Didn't open automatically?</p>
+                    <p className="text-[11px] text-slate-500">
+                      If popups were blocked by your browser, tap the button below:
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-2.5 w-full max-w-xs mt-1">
+                    <a
+                      href={generatedUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 py-2.5 px-4 rounded-xl bg-[#25D366] hover:bg-[#1EBE5D] text-white text-xs font-semibold transition-colors flex items-center justify-center gap-2 shadow-xs"
+                    >
+                      <span>Open WhatsApp</span>
+                      <ArrowUpRight className="w-3.5 h-3.5" />
+                    </a>
+                    <button
+                      onClick={onClose}
+                      className="py-2.5 px-5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+                    >
+                      Done
+                    </button>
+                  </div>
                 </div>
               )}
 
               {/* FORM */}
-              {status !== 'success' && (
+              {status !== 'opened' && (
                 <form onSubmit={handleSubmit} noValidate className="space-y-4">
                   {/* Name + Phone */}
                   <div className="grid grid-cols-2 gap-3">
@@ -302,40 +308,28 @@ export default function EnquiryModal({ isOpen, onClose, defaultProduct = null })
                   </FormField>
 
                   {/* Message */}
-                  <FormField label="Requirements">
+                  <FormField label="Requirements / Notes">
                     <textarea
                       rows={2}
                       value={form.message}
                       onChange={handleChange('message')}
+                      placeholder="Pack sizes, approximate quantity, delivery location..."
                       className={inp(false) + ' resize-none'}
                     />
                   </FormField>
 
-                  {/* Error state fallback */}
-                  {status === 'error' && (
-                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
-                      <p className="flex items-center gap-1.5 text-xs text-red-700 font-medium">
-                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                        {errorMessage || 'Failed to send enquiry. Please try again.'}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Submit button */}
+                  {/* WhatsApp Submit button */}
                   <button
                     type="submit"
-                    disabled={status === 'submitting'}
-                    className="w-full py-3 rounded-xl bg-[#01325d] hover:bg-[#022442] text-white text-sm font-semibold transition-colors disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full py-3.5 rounded-xl bg-[#25D366] hover:bg-[#1EBE5D] active:bg-[#189b4b] text-white text-sm font-bold transition-all shadow-[0_4px_16px_rgba(37,211,102,0.25)] flex items-center justify-center gap-2.5 cursor-pointer mt-2"
                   >
-                    {status === 'submitting' ? (
-                      <>
-                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Sending enquiry…
-                      </>
-                    ) : (
-                      'Send Enquiry'
-                    )}
+                    <WhatsAppIcon className="w-5 h-5" />
+                    <span>Send Enquiry via WhatsApp</span>
                   </button>
+
+                  <p className="text-[11px] text-slate-400 text-center pt-0.5">
+                    Connects directly with Yarva Surgicals Procurement desk on WhatsApp
+                  </p>
                 </form>
               )}
             </div>
