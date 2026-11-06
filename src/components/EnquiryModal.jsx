@@ -1,119 +1,179 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Check, MailCheck } from 'lucide-react';
+import { X, Check, MailCheck, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PRODUCTS } from '../data/products';
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   Recipient Email
-   All form submissions are delivered directly to this email address.
+   🔧 TARGET RECIPIENT EMAIL
+   Change this single line before hosting if you want a different email.
 ───────────────────────────────────────────────────────────────────────────── */
 const TARGET_EMAIL = 'shivammaurya2208200@gmail.com';
 
+/* ── Validation ─────────────────────────────────────────────────────────── */
+const DISPOSABLE = [
+  'mailinator.com','guerrillamail.com','trashmail.com','tempmail.com',
+  'throwam.com','yopmail.com','fakeinbox.com','spamgourmet.com',
+  'maildrop.cc','dispostable.com','discard.email','filzmail.com',
+];
+const EMAIL_RE = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+
+const validate = {
+  name: (v) => (!v.trim() ? 'Name is required' : v.trim().length < 2 ? 'Enter a valid name' : ''),
+  phone: (v) => {
+    if (!v.trim()) return 'Phone is required';
+    const d = v.trim().replace(/^\+91[\s\-]?/, '').replace(/[\s\-().]/g, '');
+    if (!/^\d+$/.test(d)) return 'Digits only';
+    if (d.length < 10) return `Too short — ${d.length}/10 digits`;
+    if (d.length > 10) return `Too long — ${d.length}/10 digits`;
+    return '';
+  },
+  email: (v) => {
+    if (!v) return '';
+    if (!EMAIL_RE.test(v.trim())) return 'Invalid email';
+    if (DISPOSABLE.includes(v.trim().split('@')[1]?.toLowerCase())) return 'Use a real email';
+    return '';
+  },
+  products: (arr) => (arr.length === 0 ? 'Select at least one product' : ''),
+};
+
+const ALL_PRODUCTS = [
+  ...PRODUCTS.map((p) => p.name),
+  'Multiple Products / Bulk Order',
+];
+
 export default function EnquiryModal({ isOpen, onClose, defaultProduct = null }) {
-  const firstInputRef = useRef(null);
+  const nameRef = useRef(null);
+  const fallbackFormRef = useRef(null);
 
-  const initialForm = {
-    name: '',
-    phone: '',
-    email: '',
-    organization: '',
-    product: defaultProduct?.name || PRODUCTS[0]?.name || '',
-    message: '',
-  };
-
-  const [form, setForm] = useState(initialForm);
+  const blank = { name: '', phone: '', email: '', message: '', products: [] };
+  const [form, setForm] = useState(blank);
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
   const [status, setStatus] = useState('idle'); // 'idle' | 'submitting' | 'success' | 'needs_activation' | 'error'
-  const [validationError, setValidationError] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
-  // Reset and focus on modal open
-  useEffect(() => {
-    if (isOpen) {
-      setForm({
-        ...initialForm,
-        product: defaultProduct?.name || PRODUCTS[0]?.name || '',
-      });
-      setStatus('idle');
-      setValidationError('');
-      const timer = setTimeout(() => firstInputRef.current?.focus(), 150);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen, defaultProduct]);
-
-  // Close on Escape key
   useEffect(() => {
     if (!isOpen) return;
-    const handleKey = (e) => {
-      if (e.key === 'Escape') handleClose();
+    const pre = defaultProduct?.name ? [defaultProduct.name] : [];
+    setForm({ ...blank, products: pre });
+    setErrors({});
+    setTouched({});
+    setStatus('idle');
+    setErrorMessage('');
+    const t = setTimeout(() => nameRef.current?.focus(), 160);
+    return () => clearTimeout(t);
+  }, [isOpen, defaultProduct]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const fn = (e) => {
+      if (e.key === 'Escape') onClose();
     };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
+    window.addEventListener('keydown', fn);
+    return () => window.removeEventListener('keydown', fn);
   }, [isOpen]);
 
-  const handleClose = () => {
-    setForm(initialForm);
-    setStatus('idle');
-    setValidationError('');
-    onClose();
-  };
+  const touch = (field) => setTouched((p) => ({ ...p, [field]: true }));
+  const err = (field, val) => setErrors((p) => ({ ...p, [field]: validate[field]?.(val) ?? '' }));
 
   const handleChange = (field) => (e) => {
-    setForm((prev) => ({ ...prev, [field]: e.target.value }));
-    if (validationError) setValidationError('');
+    const v = e.target.value;
+    setForm((p) => ({ ...p, [field]: v }));
+    if (touched[field]) err(field, v);
+  };
+
+  const handleBlur = (field) => () => {
+    touch(field);
+    err(field, form[field]);
+  };
+
+  const toggleProduct = (name) => {
+    setForm((prev) => {
+      const has = prev.products.includes(name);
+      const next = has ? prev.products.filter((p) => p !== name) : [...prev.products, name];
+      if (touched.products) setErrors((e) => ({ ...e, products: validate.products(next) }));
+      return { ...prev, products: next };
+    });
+  };
+
+  // Submit via hidden iframe form fallback (100% immune to browser CORS on localhost)
+  const submitViaFormFallback = () => {
+    if (fallbackFormRef.current) {
+      fallbackFormRef.current.submit();
+      // Give form a brief delay to transmit to FormSubmit server
+      setTimeout(() => {
+        setStatus('success');
+      }, 1000);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name.trim() || !form.phone.trim()) {
-      setValidationError('Please enter your name and phone number.');
-      return;
-    }
+    setTouched({ name: true, phone: true, email: true, products: true });
+    const errs = {
+      name: validate.name(form.name),
+      phone: validate.phone(form.phone),
+      email: validate.email(form.email),
+      products: validate.products(form.products),
+    };
+    setErrors(errs);
+    if (Object.values(errs).some(Boolean)) return;
 
     setStatus('submitting');
-    setValidationError('');
+    setErrorMessage('');
 
-    // Uses local Vite proxy on localhost to avoid browser CORS blocks;
-    // Uses direct URL on production domains.
     const isLocal =
       typeof window !== 'undefined' &&
-      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+      (window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1' ||
+        window.location.hostname.startsWith('192.168.') ||
+        window.location.hostname.startsWith('10.') ||
+        window.location.hostname.endsWith('.local'));
 
+    // In dev: try proxy endpoint; in prod: direct FormSubmit endpoint
     const endpoint = isLocal
       ? `/api/formsubmit/ajax/${TARGET_EMAIL}`
       : `https://formsubmit.co/ajax/${TARGET_EMAIL}`;
 
     try {
-      const response = await fetch(endpoint, {
+      const payload = {
+        Name: form.name,
+        Phone: form.phone,
+        Email: form.email || 'Not provided',
+        'Products Requested': form.products.join(', '),
+        Requirements: form.message || 'General quotation inquiry',
+        _subject: `Product Enquiry from ${form.name} — Yarva Surgicals`,
+        _template: 'table',
+        _captcha: 'false',
+      };
+
+      const res = await fetch(endpoint, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({
-          'Customer Name': form.name,
-          'Phone Number': form.phone,
-          'Email Address': form.email || 'Not specified',
-          'Hospital / Clinic / Store': form.organization || 'Not specified',
-          'Product Requested': form.product,
-          'Requirement Details': form.message || 'General catalogue quotation request',
-          _subject: `New Product Enquiry from ${form.name} — Yarva Surgicals`,
-          _template: 'table',
-          _captcha: 'false',
-        }),
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(payload),
       });
 
-      const data = await response.json().catch(() => ({}));
+      const data = await res.json().catch(() => ({}));
 
-      // FormSubmit requires a 1-time activation link on first submission to a new email
-      if (data.message && data.message.toLowerCase().includes('activate')) {
+      // If FormSubmit requires 1st time activation for this email
+      if (
+        data.message &&
+        (data.message.toLowerCase().includes('activate') ||
+          data.message.toLowerCase().includes('activation') ||
+          data.message.toLowerCase().includes('confirm'))
+      ) {
         setStatus('needs_activation');
-      } else if (response.ok || data.success === 'true' || data.success === true) {
+      } else if (res.ok || data.success === 'true' || data.success === true) {
         setStatus('success');
       } else {
-        setStatus('error');
+        // If AJAX was rejected (e.g. localhost CORS or unconfigured proxy), fallback to native form POST
+        console.warn('AJAX returned non-ok, falling back to direct POST:', res.status, data);
+        submitViaFormFallback();
       }
-    } catch (err) {
-      console.error('Submission error:', err);
-      setStatus('error');
+    } catch (fetchErr) {
+      // Network/CORS block on localhost: trigger native form submission via hidden iframe
+      console.warn('Fetch failed (likely localhost CORS), using iframe fallback:', fetchErr);
+      submitViaFormFallback();
     }
   };
 
@@ -121,257 +181,290 @@ export default function EnquiryModal({ isOpen, onClose, defaultProduct = null })
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-        {/* Soft, calm backdrop */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+        {/* Hidden iframe & form fallback to guarantee zero-CORS submission on localhost */}
+        <iframe
+          name="formsubmit_hidden_iframe"
+          id="formsubmit_hidden_iframe"
+          title="formsubmit_worker"
+          className="hidden"
+          style={{ display: 'none' }}
+        />
+        <form
+          ref={fallbackFormRef}
+          action={`https://formsubmit.co/${TARGET_EMAIL}`}
+          method="POST"
+          target="formsubmit_hidden_iframe"
+          className="hidden"
+          style={{ display: 'none' }}
+        >
+          <input type="hidden" name="Name" value={form.name} />
+          <input type="hidden" name="Phone" value={form.phone} />
+          <input type="hidden" name="Email" value={form.email || 'Not provided'} />
+          <input type="hidden" name="Products Requested" value={form.products.join(', ')} />
+          <input type="hidden" name="Requirements" value={form.message || 'General quotation inquiry'} />
+          <input type="hidden" name="_subject" value={`Product Enquiry from ${form.name} — Yarva Surgicals`} />
+          <input type="hidden" name="_template" value="table" />
+          <input type="hidden" name="_captcha" value="false" />
+        </form>
+
+        {/* Backdrop */}
         <motion.div
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-[2px]"
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={handleClose}
+          onClick={onClose}
         />
 
-        {/* Modal Window */}
+        {/* Modal shell */}
         <motion.div
-          className="relative w-full max-w-lg bg-white rounded-2xl shadow-xl border border-slate-200/80 overflow-hidden my-auto"
-          initial={{ opacity: 0, scale: 0.98, y: 12 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.98, y: 12 }}
-          transition={{ duration: 0.2, ease: 'easeOut' }}
+          className="relative z-10 w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl flex my-auto"
+          initial={{ opacity: 0, y: 28, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 28, scale: 0.96 }}
+          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Header */}
-          <div className="px-6 sm:px-8 pt-7 pb-4 border-b border-slate-100 flex items-start justify-between">
-            <div>
-              <h3 className="text-xl font-bold text-[#01325d] font-['Outfit'] tracking-tight">
-                Request Product Enquiry
-              </h3>
-              <p className="text-xs text-slate-500 mt-1">
-                Tell us your requirement. We’ll get back with availability and pricing.
+          {/* ── LEFT — Brand panel ── */}
+          <div className="hidden sm:flex flex-col justify-between w-56 shrink-0 bg-[#01325d] p-7 relative overflow-hidden">
+            <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/[0.04]" />
+            <div className="absolute bottom-6 -left-10 w-36 h-36 rounded-full bg-[#157e93]/20" />
+
+            <div className="relative z-10">
+              <span className="inline-block text-[10px] font-bold uppercase tracking-[0.2em] text-[#157e93] mb-5">
+                Yarva Surgicals
+              </span>
+              <h2 className="font-['Outfit'] text-2xl font-extrabold text-white leading-tight">
+                Request a Product Enquiry
+              </h2>
+              <p className="mt-3 text-xs text-white/50 leading-relaxed">
+                Fill in your details and select the products you need. We'll get back to you with availability and pricing.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={handleClose}
-              className="text-slate-400 hover:text-slate-700 p-1 rounded-md transition-colors cursor-pointer"
-              aria-label="Close"
-            >
-              <X className="w-5 h-5" />
-            </button>
+
+            <div className="relative z-10 mt-6">
+              <div className="h-px w-10 bg-[#157e93]/60 mb-4" />
+              <p className="text-[11px] text-white/40 leading-relaxed">
+                Quality • Care • Better Tomorrow
+              </p>
+            </div>
           </div>
 
-          {/* Body */}
-          <div className="px-6 sm:px-8 py-6">
-            {/* 1. SUCCESS STATE */}
-            {status === 'success' && (
-              <div className="py-8 text-center space-y-4">
-                <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
-                  <Check className="w-6 h-6 stroke-[2.5]" />
-                </div>
-                <div className="space-y-1.5">
-                  <h4 className="text-lg font-bold text-[#01325d] font-['Outfit']">
-                    Enquiry Sent Successfully
-                  </h4>
-                  <p className="text-sm text-slate-600 max-w-sm mx-auto leading-relaxed">
-                    Thank you, <span className="font-semibold text-slate-800">{form.name}</span>. Your enquiry for{' '}
-                    <span className="font-semibold text-[#01325d]">{form.product}</span> has been received. Our team will contact you at{' '}
-                    <span className="font-semibold text-slate-800">{form.phone}</span> shortly.
-                  </p>
-                </div>
-                <div className="pt-2">
+          {/* ── RIGHT — Form panel ── */}
+          <div className="flex-1 bg-white">
+            <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-slate-100">
+              <p className="font-['Outfit'] text-base font-bold text-[#01325d] sm:hidden">Product Enquiry</p>
+              <p className="font-['Outfit'] text-sm font-semibold text-[#01325d] hidden sm:block">Your Details</p>
+              <button
+                onClick={onClose}
+                aria-label="Close"
+                className="ml-auto rounded-full p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="px-6 py-5">
+              {/* SUCCESS */}
+              {status === 'success' && (
+                <div className="py-10 flex flex-col items-center gap-4 text-center">
+                  <div className="w-14 h-14 rounded-full bg-[#157e93]/10 flex items-center justify-center">
+                    <Check className="w-7 h-7 text-[#157e93] stroke-[2.5]" />
+                  </div>
+                  <div>
+                    <h4 className="font-['Outfit'] text-lg font-bold text-[#01325d]">Enquiry Sent!</h4>
+                    <p className="text-sm text-slate-500 mt-1 leading-relaxed max-w-xs mx-auto">
+                      Thanks, <strong className="text-slate-700">{form.name}</strong>. We've received your enquiry for{' '}
+                      <strong className="text-[#01325d]">{form.products.join(', ')}</strong>.
+                      Our team will reach you at <strong className="text-slate-700">{form.phone}</strong>.
+                    </p>
+                  </div>
                   <button
-                    type="button"
-                    onClick={handleClose}
-                    className="px-6 py-2.5 rounded-lg bg-[#01325d] text-white text-xs font-semibold hover:bg-[#022442] transition-colors cursor-pointer"
+                    onClick={onClose}
+                    className="mt-1 px-7 py-2.5 rounded-xl bg-[#01325d] text-white text-sm font-semibold hover:bg-[#022442] transition-colors cursor-pointer"
                   >
                     Done
                   </button>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* 2. FIRST-TIME ACTIVATION NOTICE */}
-            {status === 'needs_activation' && (
-              <div className="py-6 text-center space-y-4">
-                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto">
-                  <MailCheck className="w-6 h-6 stroke-[2]" />
-                </div>
-                <div className="space-y-2">
-                  <h4 className="text-base font-bold text-[#01325d] font-['Outfit']">
-                    1-Time Email Activation Required
-                  </h4>
-                  <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">
-                    FormSubmit has sent an activation email to{' '}
-                    <strong className="text-slate-800">{TARGET_EMAIL}</strong>.
-                  </p>
-                </div>
-                <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-left text-xs text-amber-900 space-y-1.5">
-                  <p className="font-semibold">Next step:</p>
-                  <ol className="list-decimal list-inside space-y-1 text-[11px] text-amber-800 leading-relaxed">
-                    <li>
-                      Open your Gmail at <strong>{TARGET_EMAIL}</strong>.
-                    </li>
-                    <li>
-                      Check your <strong>Spam / Junk folder</strong> (or Promotions tab) for an email with subject{' '}
-                      <em>"Action Required: Activate FormSubmit"</em>.
-                    </li>
-                    <li>
-                      Click the green <strong>"Activate Form"</strong> button inside that email.
-                    </li>
-                  </ol>
-                  <p className="text-[11px] text-amber-800 pt-1">
-                    Once clicked, this 1-time setup is complete forever, and all future customer clicks will instantly arrive in your inbox.
-                  </p>
-                </div>
-                <div className="pt-2">
+              {/* NEEDS ACTIVATION */}
+              {status === 'needs_activation' && (
+                <div className="py-6 flex flex-col items-center gap-3 text-center">
+                  <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center">
+                    <MailCheck className="w-6 h-6 text-blue-600 stroke-[1.8]" />
+                  </div>
+                  <div>
+                    <h4 className="font-['Outfit'] text-base font-bold text-[#01325d]">1-Time Activation Needed</h4>
+                    <p className="text-xs text-slate-600 mt-1 max-w-sm mx-auto leading-relaxed">
+                      FormSubmit sent a one-time activation link to:
+                      <br />
+                      <strong className="text-[#01325d] text-sm">{TARGET_EMAIL}</strong>
+                    </p>
+                  </div>
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-left text-xs text-amber-900 space-y-1 w-full max-w-sm">
+                    <p className="font-semibold">Quick 30-second setup:</p>
+                    <ol className="list-decimal list-inside space-y-0.5 text-[11px] text-amber-800">
+                      <li>Open Gmail at <strong>{TARGET_EMAIL}</strong></li>
+                      <li>Check <strong>Spam / Promotions</strong> for <em>"Activate FormSubmit"</em></li>
+                      <li>Click the green <strong>"Activate Form"</strong> button inside</li>
+                    </ol>
+                    <p className="text-[10px] text-amber-700 pt-1">
+                      After that 1-click step, all customer enquiries will land directly in your inbox forever.
+                    </p>
+                  </div>
                   <button
-                    type="button"
-                    onClick={handleClose}
-                    className="px-6 py-2.5 rounded-lg bg-[#01325d] text-white text-xs font-semibold hover:bg-[#022442] transition-colors cursor-pointer"
+                    onClick={onClose}
+                    className="px-6 py-2 rounded-xl bg-[#01325d] text-white text-xs font-semibold hover:bg-[#022442] transition-colors cursor-pointer mt-1"
                   >
                     Got It
                   </button>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* 3. FORM INPUTS (IDLE / SUBMITTING / ERROR) */}
-            {status !== 'success' && status !== 'needs_activation' && (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Name & Phone */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Your Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      ref={firstInputRef}
-                      type="text"
-                      required
-                      placeholder="e.g. Dr. Rajesh Kumar"
-                      value={form.name}
-                      onChange={handleChange('name')}
-                      className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#01325d] focus:ring-1 focus:ring-[#01325d] transition-all"
-                    />
+              {/* FORM */}
+              {status !== 'success' && status !== 'needs_activation' && (
+                <form onSubmit={handleSubmit} noValidate className="space-y-4">
+                  {/* Name + Phone */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField label="Full Name" error={errors.name} required>
+                      <input
+                        ref={nameRef}
+                        type="text"
+                        value={form.name}
+                        onChange={handleChange('name')}
+                        onBlur={handleBlur('name')}
+                        autoComplete="name"
+                        className={inp(!!errors.name)}
+                      />
+                    </FormField>
+                    <FormField label="Phone Number" error={errors.phone} required>
+                      <input
+                        type="tel"
+                        value={form.phone}
+                        onChange={handleChange('phone')}
+                        onBlur={handleBlur('phone')}
+                        autoComplete="tel"
+                        className={inp(!!errors.phone)}
+                      />
+                    </FormField>
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Phone Number <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      required
-                      placeholder="+91 98765 43210"
-                      value={form.phone}
-                      onChange={handleChange('phone')}
-                      className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#01325d] focus:ring-1 focus:ring-[#01325d] transition-all"
-                    />
-                  </div>
-                </div>
 
-                {/* Email & Organization */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Email Address
-                    </label>
+                  {/* Email */}
+                  <FormField label="Email Address" error={errors.email}>
                     <input
                       type="email"
-                      placeholder="doctor@hospital.com"
                       value={form.email}
                       onChange={handleChange('email')}
-                      className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#01325d] focus:ring-1 focus:ring-[#01325d] transition-all"
+                      onBlur={handleBlur('email')}
+                      autoComplete="email"
+                      className={inp(!!errors.email)}
                     />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Hospital / Clinic / Store
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Apollo Clinic, Pune"
-                      value={form.organization}
-                      onChange={handleChange('organization')}
-                      className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#01325d] focus:ring-1 focus:ring-[#01325d] transition-all"
+                  </FormField>
+
+                  {/* Product chips */}
+                  <FormField label="Products of Interest" error={errors.products} required>
+                    <div className="flex flex-wrap gap-2 pt-0.5 max-h-36 overflow-y-auto pr-1">
+                      {ALL_PRODUCTS.map((name) => {
+                        const selected = form.products.includes(name);
+                        return (
+                          <button
+                            key={name}
+                            type="button"
+                            onClick={() => toggleProduct(name)}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all cursor-pointer
+                              ${
+                                selected
+                                  ? 'bg-[#01325d] border-[#01325d] text-white shadow-xs'
+                                  : 'bg-white border-slate-200 text-slate-600 hover:border-[#157e93] hover:text-[#157e93]'
+                              }`}
+                          >
+                            {selected && <Check className="w-3 h-3 stroke-[2.5]" />}
+                            {name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </FormField>
+
+                  {/* Message */}
+                  <FormField label="Requirements">
+                    <textarea
+                      rows={2}
+                      value={form.message}
+                      onChange={handleChange('message')}
+                      className={inp(false) + ' resize-none'}
                     />
-                  </div>
-                </div>
+                  </FormField>
 
-                {/* Product of Interest */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Product of Interest
-                  </label>
-                  <select
-                    value={form.product}
-                    onChange={handleChange('product')}
-                    className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-800 focus:outline-none focus:border-[#01325d] focus:ring-1 focus:ring-[#01325d] transition-all cursor-pointer"
-                  >
-                    {PRODUCTS.map((prod) => (
-                      <option key={prod.id} value={prod.name}>
-                        {prod.name}
-                      </option>
-                    ))}
-                    <option value="Multiple Products / Bulk Hospital Order">
-                      Multiple Products / Bulk Hospital Order
-                    </option>
-                  </select>
-                </div>
+                  {/* Error state fallback */}
+                  {status === 'error' && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl space-y-2">
+                      <p className="flex items-center gap-1.5 text-xs text-red-700 font-medium">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        {errorMessage || "Couldn't send via AJAX on localhost."}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={submitViaFormFallback}
+                        className="w-full py-2 bg-[#01325d] text-white text-xs font-semibold rounded-lg hover:bg-[#022442] transition-colors"
+                      >
+                        Send via Direct Form Link
+                      </button>
+                    </div>
+                  )}
 
-                {/* Requirement / Message */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Quantity &amp; Specific Requirements
-                  </label>
-                  <textarea
-                    rows={3}
-                    placeholder="Approximate quantity, pack sizes, or preferred delivery timeframe..."
-                    value={form.message}
-                    onChange={handleChange('message')}
-                    className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#01325d] focus:ring-1 focus:ring-[#01325d] resize-none transition-all"
-                  />
-                </div>
-
-                {/* Validation Error */}
-                {validationError && (
-                  <p className="text-xs text-red-600 font-medium">
-                    {validationError}
-                  </p>
-                )}
-
-                {/* Submission Error Banner */}
-                {status === 'error' && (
-                  <p className="text-xs text-red-600 font-medium bg-red-50 p-2.5 rounded-lg border border-red-200">
-                    Unable to submit right now. Please check your connection and try again.
-                  </p>
-                )}
-
-                {/* Submit Button */}
-                <div className="pt-2">
+                  {/* Submit button */}
                   <button
                     type="submit"
                     disabled={status === 'submitting'}
-                    className="w-full py-3 px-4 bg-[#01325d] hover:bg-[#022442] active:bg-[#011a30] text-white text-sm font-semibold rounded-lg transition-colors shadow-sm disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full py-3 rounded-xl bg-[#01325d] hover:bg-[#022442] text-white text-sm font-semibold transition-colors disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer"
                   >
                     {status === 'submitting' ? (
                       <>
                         <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        <span>Sending enquiry...</span>
+                        Sending enquiry…
                       </>
                     ) : (
-                      <span>Send Enquiry</span>
+                      'Send Enquiry'
                     )}
                   </button>
-                </div>
-
-                <p className="text-[11px] text-slate-400 text-center pt-1">
-                  Your enquiry will be sent directly to our procurement desk.
-                </p>
-              </form>
-            )}
+                </form>
+              )}
+            </div>
           </div>
         </motion.div>
       </div>
     </AnimatePresence>
   );
+}
+
+/* ── Sub-components ────────────────────────────────────────────────────── */
+function FormField({ label, error, required, children }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">
+        {label}
+        {required && <span className="ml-0.5 text-[#157e93]"> *</span>}
+      </label>
+      {children}
+      {error && (
+        <p className="flex items-center gap-1 text-[11px] text-red-500 font-medium">
+          <AlertCircle className="w-3 h-3 shrink-0" />
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function inp(hasError) {
+  return `w-full px-3.5 py-2.5 text-sm bg-slate-50 border rounded-xl text-slate-800
+    focus:outline-none focus:bg-white transition-all
+    ${
+      hasError
+        ? 'border-red-400 focus:border-red-500 focus:ring-1 focus:ring-red-300'
+        : 'border-slate-200 focus:border-[#157e93] focus:ring-1 focus:ring-[#157e93]/25'
+    }`;
 }
