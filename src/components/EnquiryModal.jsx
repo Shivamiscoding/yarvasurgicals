@@ -5,13 +5,7 @@ import { PRODUCTS } from '../data/products';
 
 /* ─────────────────────────────────────────────────────────────────────────────
    🔧 WEB3FORMS ACCESS KEY
-   Submissions are sent directly to the email registered with this key
-   (shivammaurya2208200@gmail.com).
-
-   To change the recipient email in the future:
-   1. Enter new email at https://web3forms.com
-   2. Copy the key received in that email
-   3. Replace this ACCESS_KEY with the new key.
+   Submissions are sent directly to shivammaurya2208200@gmail.com
 ───────────────────────────────────────────────────────────────────────────── */
 const WEB3FORMS_ACCESS_KEY = '12b8a0ae-8fd1-447e-a3e5-225d33526b50';
 
@@ -34,7 +28,7 @@ const validate = {
     return '';
   },
   email: (v) => {
-    if (!v) return '';
+    if (!v || !v.trim()) return '';
     if (!EMAIL_RE.test(v.trim())) return 'Invalid email';
     if (DISPOSABLE.includes(v.trim().split('@')[1]?.toLowerCase())) return 'Use a real email';
     return '';
@@ -119,14 +113,18 @@ export default function EnquiryModal({ isOpen, onClose, defaultProduct = null })
     try {
       const payload = {
         access_key: WEB3FORMS_ACCESS_KEY,
-        subject: `Product Enquiry from ${form.name} — Yarva Surgicals`,
+        subject: `New Product Enquiry from ${form.name.trim()} — Yarva Surgicals`,
         from_name: 'Yarva Surgicals Website',
-        name: form.name,
-        phone: form.phone,
-        email: form.email || 'Not provided',
+        name: form.name.trim(),
+        phone: form.phone.trim(),
         products_requested: form.products.join(', '),
-        requirements: form.message || 'General quotation inquiry',
+        requirements: form.message.trim() || 'General quotation inquiry',
       };
+
+      // Only include email if user actually entered one to avoid triggering Web3Forms invalid email validator
+      if (form.email && form.email.trim()) {
+        payload.email = form.email.trim();
+      }
 
       const res = await fetch('https://api.web3forms.com/submit', {
         method: 'POST',
@@ -142,7 +140,7 @@ export default function EnquiryModal({ isOpen, onClose, defaultProduct = null })
       if (res.ok && (data.success === true || data.success === 'true')) {
         setStatus('success');
       } else {
-        setErrorMessage(data.message || 'Failed to send enquiry. Please try again.');
+        setErrorMessage(data.message || 'Submission could not be completed. Please try again.');
         setStatus('error');
       }
     } catch (err) {
