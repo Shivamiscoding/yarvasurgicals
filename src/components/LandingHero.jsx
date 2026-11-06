@@ -1,18 +1,19 @@
-import React, { useEffect, useState, lazy, Suspense } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ArrowRight, MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { COMPANY } from '../data/products';
 import InteractiveLogo from './InteractiveLogo';
-const FloatingObjects3D = lazy(() => import('./FloatingObjects3D'));
+import FloatingObjects3D from './FloatingObjects3D';
 
 export default function LandingHero({ onOpenEnquiryModal }) {
   const [loaded, setLoaded] = useState(false);
-  const [show3D, setShow3D] = useState(false);
+  const [show3D] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  });
 
   useEffect(() => {
     const timer = setTimeout(() => setLoaded(true), 80);
-    const noReducedMotion = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    setShow3D(noReducedMotion);
     return () => clearTimeout(timer);
   }, []);
 
@@ -43,12 +44,8 @@ export default function LandingHero({ onOpenEnquiryModal }) {
         style={{ background: 'radial-gradient(ellipse at 10% 90%, rgba(1,50,93,0.04) 0%, transparent 70%)' }}
       />
 
-      {/* 3D objects — fills the right half */}
-      {show3D && (
-        <Suspense fallback={null}>
-          <FloatingObjects3D />
-        </Suspense>
-      )}
+      {/* 3D objects */}
+      {show3D && <FloatingObjects3D />}
 
       {/* ── Main layout ── */}
       <div className="relative z-10 flex-1 flex flex-col justify-center">
