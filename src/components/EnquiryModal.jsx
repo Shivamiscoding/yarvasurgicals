@@ -1,13 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Check, MailCheck, AlertCircle } from 'lucide-react';
+import { X, Check, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PRODUCTS } from '../data/products';
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   🔧 TARGET RECIPIENT EMAIL
-   Change this single line before hosting if you want a different email.
+   🔧 WEB3FORMS ACCESS KEY
+   Submissions are sent directly to the email registered with this key
+   (shivammaurya2208200@gmail.com).
+
+   To change the recipient email in the future:
+   1. Enter new email at https://web3forms.com
+   2. Copy the key received in that email
+   3. Replace this ACCESS_KEY with the new key.
 ───────────────────────────────────────────────────────────────────────────── */
-const TARGET_EMAIL = 'shivammaurya2208200@gmail.com';
+const WEB3FORMS_ACCESS_KEY = '12b8a0ae-8fd1-447e-a3e5-225d33526b50';
 
 /* ── Validation ─────────────────────────────────────────────────────────── */
 const DISPOSABLE = [
@@ -43,13 +49,12 @@ const ALL_PRODUCTS = [
 
 export default function EnquiryModal({ isOpen, onClose, defaultProduct = null }) {
   const nameRef = useRef(null);
-  const fallbackFormRef = useRef(null);
 
   const blank = { name: '', phone: '', email: '', message: '', products: [] };
   const [form, setForm] = useState(blank);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
-  const [status, setStatus] = useState('idle'); // 'idle' | 'submitting' | 'success' | 'needs_activation' | 'error'
+  const [status, setStatus] = useState('idle'); // 'idle' | 'submitting' | 'success' | 'error'
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
@@ -96,17 +101,6 @@ export default function EnquiryModal({ isOpen, onClose, defaultProduct = null })
     });
   };
 
-  // Submit via hidden iframe form fallback (100% immune to browser CORS on localhost)
-  const submitViaFormFallback = () => {
-    if (fallbackFormRef.current) {
-      fallbackFormRef.current.submit();
-      // Give form a brief delay to transmit to FormSubmit server
-      setTimeout(() => {
-        setStatus('success');
-      }, 1000);
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setTouched({ name: true, phone: true, email: true, products: true });
@@ -122,58 +116,39 @@ export default function EnquiryModal({ isOpen, onClose, defaultProduct = null })
     setStatus('submitting');
     setErrorMessage('');
 
-    const isLocal =
-      typeof window !== 'undefined' &&
-      (window.location.hostname === 'localhost' ||
-        window.location.hostname === '127.0.0.1' ||
-        window.location.hostname.startsWith('192.168.') ||
-        window.location.hostname.startsWith('10.') ||
-        window.location.hostname.endsWith('.local'));
-
-    // In dev: try proxy endpoint; in prod: direct FormSubmit endpoint
-    const endpoint = isLocal
-      ? `/api/formsubmit/ajax/${TARGET_EMAIL}`
-      : `https://formsubmit.co/ajax/${TARGET_EMAIL}`;
-
     try {
       const payload = {
-        Name: form.name,
-        Phone: form.phone,
-        Email: form.email || 'Not provided',
-        'Products Requested': form.products.join(', '),
-        Requirements: form.message || 'General quotation inquiry',
-        _subject: `Product Enquiry from ${form.name} — Yarva Surgicals`,
-        _template: 'table',
-        _captcha: 'false',
+        access_key: WEB3FORMS_ACCESS_KEY,
+        subject: `Product Enquiry from ${form.name} — Yarva Surgicals`,
+        from_name: 'Yarva Surgicals Website',
+        name: form.name,
+        phone: form.phone,
+        email: form.email || 'Not provided',
+        products_requested: form.products.join(', '),
+        requirements: form.message || 'General quotation inquiry',
       };
 
-      const res = await fetch(endpoint, {
+      const res = await fetch('https://api.web3forms.com/submit', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
         body: JSON.stringify(payload),
       });
 
       const data = await res.json().catch(() => ({}));
 
-      // If FormSubmit requires 1st time activation for this email
-      if (
-        data.message &&
-        (data.message.toLowerCase().includes('activate') ||
-          data.message.toLowerCase().includes('activation') ||
-          data.message.toLowerCase().includes('confirm'))
-      ) {
-        setStatus('needs_activation');
-      } else if (res.ok || data.success === 'true' || data.success === true) {
+      if (res.ok && (data.success === true || data.success === 'true')) {
         setStatus('success');
       } else {
-        // If AJAX was rejected (e.g. localhost CORS or unconfigured proxy), fallback to native form POST
-        console.warn('AJAX returned non-ok, falling back to direct POST:', res.status, data);
-        submitViaFormFallback();
+        setErrorMessage(data.message || 'Failed to send enquiry. Please try again.');
+        setStatus('error');
       }
-    } catch (fetchErr) {
-      // Network/CORS block on localhost: trigger native form submission via hidden iframe
-      console.warn('Fetch failed (likely localhost CORS), using iframe fallback:', fetchErr);
-      submitViaFormFallback();
+    } catch (err) {
+      console.error('Submission error:', err);
+      setErrorMessage('Network connection error. Please try again.');
+      setStatus('error');
     }
   };
 
@@ -182,32 +157,6 @@ export default function EnquiryModal({ isOpen, onClose, defaultProduct = null })
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
-        {/* Hidden iframe & form fallback to guarantee zero-CORS submission on localhost */}
-        <iframe
-          name="formsubmit_hidden_iframe"
-          id="formsubmit_hidden_iframe"
-          title="formsubmit_worker"
-          className="hidden"
-          style={{ display: 'none' }}
-        />
-        <form
-          ref={fallbackFormRef}
-          action={`https://formsubmit.co/${TARGET_EMAIL}`}
-          method="POST"
-          target="formsubmit_hidden_iframe"
-          className="hidden"
-          style={{ display: 'none' }}
-        >
-          <input type="hidden" name="Name" value={form.name} />
-          <input type="hidden" name="Phone" value={form.phone} />
-          <input type="hidden" name="Email" value={form.email || 'Not provided'} />
-          <input type="hidden" name="Products Requested" value={form.products.join(', ')} />
-          <input type="hidden" name="Requirements" value={form.message || 'General quotation inquiry'} />
-          <input type="hidden" name="_subject" value={`Product Enquiry from ${form.name} — Yarva Surgicals`} />
-          <input type="hidden" name="_template" value="table" />
-          <input type="hidden" name="_captcha" value="false" />
-        </form>
-
         {/* Backdrop */}
         <motion.div
           className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
@@ -289,42 +238,8 @@ export default function EnquiryModal({ isOpen, onClose, defaultProduct = null })
                 </div>
               )}
 
-              {/* NEEDS ACTIVATION */}
-              {status === 'needs_activation' && (
-                <div className="py-6 flex flex-col items-center gap-3 text-center">
-                  <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center">
-                    <MailCheck className="w-6 h-6 text-blue-600 stroke-[1.8]" />
-                  </div>
-                  <div>
-                    <h4 className="font-['Outfit'] text-base font-bold text-[#01325d]">1-Time Activation Needed</h4>
-                    <p className="text-xs text-slate-600 mt-1 max-w-sm mx-auto leading-relaxed">
-                      FormSubmit sent a one-time activation link to:
-                      <br />
-                      <strong className="text-[#01325d] text-sm">{TARGET_EMAIL}</strong>
-                    </p>
-                  </div>
-                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-left text-xs text-amber-900 space-y-1 w-full max-w-sm">
-                    <p className="font-semibold">Quick 30-second setup:</p>
-                    <ol className="list-decimal list-inside space-y-0.5 text-[11px] text-amber-800">
-                      <li>Open Gmail at <strong>{TARGET_EMAIL}</strong></li>
-                      <li>Check <strong>Spam / Promotions</strong> for <em>"Activate FormSubmit"</em></li>
-                      <li>Click the green <strong>"Activate Form"</strong> button inside</li>
-                    </ol>
-                    <p className="text-[10px] text-amber-700 pt-1">
-                      After that 1-click step, all customer enquiries will land directly in your inbox forever.
-                    </p>
-                  </div>
-                  <button
-                    onClick={onClose}
-                    className="px-6 py-2 rounded-xl bg-[#01325d] text-white text-xs font-semibold hover:bg-[#022442] transition-colors cursor-pointer mt-1"
-                  >
-                    Got It
-                  </button>
-                </div>
-              )}
-
               {/* FORM */}
-              {status !== 'success' && status !== 'needs_activation' && (
+              {status !== 'success' && (
                 <form onSubmit={handleSubmit} noValidate className="space-y-4">
                   {/* Name + Phone */}
                   <div className="grid grid-cols-2 gap-3">
@@ -400,18 +315,11 @@ export default function EnquiryModal({ isOpen, onClose, defaultProduct = null })
 
                   {/* Error state fallback */}
                   {status === 'error' && (
-                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl space-y-2">
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
                       <p className="flex items-center gap-1.5 text-xs text-red-700 font-medium">
                         <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                        {errorMessage || "Couldn't send via AJAX on localhost."}
+                        {errorMessage || 'Failed to send enquiry. Please try again.'}
                       </p>
-                      <button
-                        type="button"
-                        onClick={submitViaFormFallback}
-                        className="w-full py-2 bg-[#01325d] text-white text-xs font-semibold rounded-lg hover:bg-[#022442] transition-colors"
-                      >
-                        Send via Direct Form Link
-                      </button>
                     </div>
                   )}
 
