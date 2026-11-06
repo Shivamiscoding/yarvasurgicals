@@ -338,7 +338,6 @@ export default function EnquiryModal({ isOpen, onClose, defaultProduct = null })
                         onChange={handleChange('name')}
                         onBlur={handleBlur('name')}
                         autoComplete="name"
-                        placeholder="Dr. / Purchase Manager"
                         className={inp(!!errors.name)}
                       />
                     </FormField>
@@ -349,7 +348,6 @@ export default function EnquiryModal({ isOpen, onClose, defaultProduct = null })
                         onChange={handleChange('phone')}
                         onBlur={handleBlur('phone')}
                         autoComplete="tel"
-                        placeholder="+91 98765 43210"
                         className={inp(!!errors.phone)}
                       />
                     </FormField>
@@ -363,7 +361,6 @@ export default function EnquiryModal({ isOpen, onClose, defaultProduct = null })
                       onChange={handleChange('email')}
                       onBlur={handleBlur('email')}
                       autoComplete="email"
-                      placeholder="hospital@example.com"
                       className={inp(!!errors.email)}
                     />
                   </FormField>
@@ -399,7 +396,6 @@ export default function EnquiryModal({ isOpen, onClose, defaultProduct = null })
                       rows={2}
                       value={form.message}
                       onChange={handleChange('message')}
-                      placeholder="Pack sizes, approximate quantity, delivery location..."
                       className={inp(false) + ' resize-none'}
                     />
                   </FormField>
